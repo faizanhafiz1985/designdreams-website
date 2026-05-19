@@ -152,5 +152,47 @@
     "badge": "New",
     "rating": 4.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779222495867",
+    "name": "Dimond Cut Set",
+    "category": "Sets",
+    "price": 2000,
+    "price_usd": 0,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779222495867.jpeg",
+    "short_desc": "",
+    "description": "",
+    "material": "",
+    "badge": "Bestseller",
+    "rating": 5,
+    "in_stock": true
+  },
+  {
+    "id": "p1779222568094",
+    "name": "AD Zircon Set",
+    "category": "Sets",
+    "price": 3000,
+    "price_usd": 0,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779222568094.jpeg",
+    "short_desc": "",
+    "description": "",
+    "material": "",
+    "badge": "Bestseller",
+    "rating": 5,
+    "in_stock": true
+  },
+  {
+    "id": "p1779222671982",
+    "name": "Elegant Cut Dimond Black Stone Set",
+    "category": "Sets",
+    "price": 3000,
+    "price_usd": 0,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779222671982.jpeg",
+    "short_desc": "",
+    "description": "",
+    "material": "",
+    "badge": "Bestseller",
+    "rating": 5,
+    "in_stock": true
   }
 ]
