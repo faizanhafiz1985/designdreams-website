@@ -69,7 +69,7 @@ const DD_CONFIG = {
   // The key is safe to ship in client-side code: Web3Forms enforces
   // per-key rate limits and spam filtering.
   web3forms: {
-    accessKey: '',  // ← Paste your Web3Forms Access Key here, OR set it via Admin → Settings
+    accessKey: '771faed2-6460-4f1e-b084-0cf818ac46ef',  // Live key — DesignDreams (web3forms.com)
   },
 };
 
