@@ -68,5 +68,19 @@
     "badge": "Bestseller",
     "rating": 4.8,
     "in_stock": true
+  },
+  {
+    "id": "p1779217371245",
+    "name": "Zircon Set",
+    "category": "Sets",
+    "price": 1500,
+    "price_usd": 0,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779217371245.jpeg",
+    "short_desc": "original lifetime easily wearn lite weight",
+    "description": "",
+    "material": "925 Stainless Steel, Cubic Zirconia",
+    "badge": "New",
+    "rating": 4.5,
+    "in_stock": true
   }
 ]
