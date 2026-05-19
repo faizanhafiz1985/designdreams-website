@@ -82,5 +82,19 @@
     "badge": "New",
     "rating": 4.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779219637538",
+    "name": "Stainless Steel Anklet",
+    "category": "Anklets",
+    "price": 350,
+    "price_usd": 15.75,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779219637538.png",
+    "short_desc": "",
+    "description": "",
+    "material": "925 Stainless Steel, Gold Plated",
+    "badge": "New",
+    "rating": 4.5,
+    "in_stock": true
   }
 ]
