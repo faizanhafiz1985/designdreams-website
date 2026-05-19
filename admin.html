@@ -828,11 +828,24 @@
             </div>
           </div>
           <div id="gh-test-result" style="display:none;margin-top:12px;padding:10px 14px;border-radius:6px;font-size:0.82rem;"></div>
-          <div style="margin-top:12px;">
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
             <button class="btn btn-sm" onclick="testGitHubConnection()"
-                    style="background:#24292f;color:#fff;border:none;gap:6px;display:inline-flex;align-items:center;">
+                    style="background:#24292f;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;">
               <i class="fas fa-plug"></i> Test Connection
             </button>
+            <button class="btn btn-sm" onclick="exportAdminSettings()"
+                    style="background:none;border:1px solid #24292f;color:#24292f;display:inline-flex;align-items:center;gap:6px;"
+                    title="Download settings as JSON to use on another machine">
+              <i class="fas fa-file-export"></i> Export Settings
+            </button>
+            <button class="btn btn-sm" onclick="importAdminSettings()"
+                    style="background:none;border:1px solid #24292f;color:#24292f;display:inline-flex;align-items:center;gap:6px;"
+                    title="Import settings JSON on a new machine so you don't have to retype credentials">
+              <i class="fas fa-file-import"></i> Import Settings
+            </button>
+            <small style="color:var(--gray);font-size:0.73rem;">
+              Use <strong>Export</strong> on this machine, then <strong>Import</strong> on any other machine — no need to re-enter credentials.
+            </small>
           </div>
         </div>
 

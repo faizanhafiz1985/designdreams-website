@@ -337,9 +337,10 @@ async function testGitHubConnection() {
   if (!result) return;
 
   const saved  = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-  const token  = saved.gh_token || document.getElementById('set-gh-token')?.value?.trim() || '';
-  const owner  = saved.gh_owner || document.getElementById('set-gh-owner')?.value?.trim() || '';
-  const repo   = saved.gh_repo  || document.getElementById('set-gh-repo')?.value?.trim()  || '';
+  // Always prefer what the user has typed right now over what's stored (allows testing a new token before saving)
+  const token  = document.getElementById('set-gh-token')?.value?.trim() || saved.gh_token || '';
+  const owner  = document.getElementById('set-gh-owner')?.value?.trim() || saved.gh_owner || '';
+  const repo   = document.getElementById('set-gh-repo')?.value?.trim()  || saved.gh_repo  || '';
 
   if (!token || !owner || !repo) {
     result.style.display = 'block';
@@ -426,35 +427,59 @@ function publishChangesToWebsite() {
         return;
       }
 
+      // ── Detect locally-uploaded (base64) images ───────────
+      const base64Prods = products.filter(p => p.image_url && p.image_url.startsWith('data:'));
+      if (base64Prods.length) {
+        setBtnState('error');
+        const names = base64Prods.map(p => `"${p.name}"`).join(', ');
+        showToast(
+          `❌ ${base64Prods.length} product(s) have device-uploaded images that only exist in this browser: ${names}. ` +
+          `Open each product → Upload tab → re-upload so it saves to GitHub, then publish again.`,
+          'error'
+        );
+        // Also show a persistent panel notice
+        const panel = document.getElementById('panel-products');
+        let warn = document.getElementById('base64-warning');
+        if (!warn) {
+          warn = document.createElement('div');
+          warn.id = 'base64-warning';
+          warn.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:0.85rem;color:#7b5800;';
+          panel?.insertBefore(warn, panel.firstElementChild?.nextElementSibling);
+        }
+        warn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Cannot publish:</strong> ${base64Prods.length} product(s) have images stored only in this browser (device-uploaded without GitHub credentials). Re-open each product → Upload tab → re-upload the image. Make sure GitHub credentials are saved in Settings first.
+          <ul style="margin:8px 0 0 18px;">${base64Prods.map(p => `<li>${htmlEscape(p.name)}</li>`).join('')}</ul>`;
+        return;
+      }
+
       const json = JSON.stringify(products, null, 2);
 
-      // Check for GitHub credentials
+      // ── Check for GitHub credentials ───────────────────────
       const saved  = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
       const token  = saved.gh_token || '';
       const owner  = saved.gh_owner || '';
       const repo   = saved.gh_repo  || '';
       const branch = saved.gh_branch || 'main';
 
-      if (token && owner && repo) {
-        // ── Auto-publish via GitHub API ───────────────────────
-        showToast('Pushing to GitHub… please wait ~5 seconds.', '');
-        try {
-          await _publishViaGitHubAPI(token, owner, repo, json, branch);
-          localStorage.removeItem('dd_products_dirty');
-          updatePublishBadge();
-          setBtnState('success');
-          showToast('✅ Published to GitHub! Your live site will update in ~1 minute.', 'success');
-        } catch (apiErr) {
-          setBtnState('error');
-          showToast('Publish failed: ' + (apiErr.message || 'Unknown error'), 'error');
-        }
-      } else {
-        // ── Fallback: download products.json ──────────────────
-        _downloadJson(json);
+      if (!token || !owner || !repo) {
+        // ── No credentials: prompt user to enter token inline ─
+        setBtnState('error');
+        _showQuickPublishModal(json);
+        return;
+      }
+
+      // ── Auto-publish via GitHub API ────────────────────────
+      showToast('Pushing to GitHub… please wait ~5 seconds.', '');
+      try {
+        await _publishViaGitHubAPI(token, owner, repo, json, branch);
         localStorage.removeItem('dd_products_dirty');
+        // Remove any base64 warning banner
+        document.getElementById('base64-warning')?.remove();
         updatePublishBadge();
         setBtnState('success');
-        showToast('✅ Downloaded! Go to Settings → GitHub Auto-Publish to enable one-click publishing.', 'success');
+        showToast('✅ Published to GitHub! Your live site will update in ~1 minute.', 'success');
+      } catch (apiErr) {
+        setBtnState('error');
+        showToast('Publish failed: ' + (apiErr.message || 'Unknown error'), 'error');
       }
     } catch (e) {
       setBtnState('error');
@@ -465,6 +490,134 @@ function publishChangesToWebsite() {
   _run();
 }
 window.publishChangesToWebsite = publishChangesToWebsite;
+
+/**
+ * Quick-publish modal — shown when the user clicks Publish but has no credentials saved.
+ * Lets them enter a token once without going to Settings.
+ */
+function _showQuickPublishModal(json) {
+  const existing = document.getElementById('quick-publish-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'quick-publish-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+  overlay.innerHTML = `
+    <div style="background:var(--white);border-radius:var(--radius-md);padding:32px;max-width:500px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,0.4);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-family:var(--font-serif);font-size:1.1rem;display:flex;align-items:center;gap:8px;">
+          <i class="fab fa-github"></i> GitHub Credentials Required
+        </h3>
+        <button id="qp-close" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray);">✕</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--gray);margin-bottom:20px;line-height:1.7;">
+        GitHub credentials are not saved in this browser. Enter them below to publish now, or go to
+        <strong>Settings → GitHub Auto-Publish</strong> to save them permanently (recommended).
+      </p>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div><label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">GitHub Username</label>
+          <input type="text" id="qp-owner" placeholder="faizanhafiz1985" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;" /></div>
+        <div><label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Repository Name</label>
+          <input type="text" id="qp-repo" placeholder="designdreams-website" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;" /></div>
+        <div><label style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Personal Access Token</label>
+          <input type="password" id="qp-token" placeholder="ghp_xxxxxxxxxxxxxxxx" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;" /></div>
+      </div>
+      <div id="qp-error" style="display:none;margin-top:10px;padding:8px 12px;background:#fce4e4;color:#c62828;border-radius:6px;font-size:0.82rem;"></div>
+      <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+        <button id="qp-save-btn" style="padding:8px 14px;border:1px solid var(--gold);border-radius:var(--radius);background:none;color:var(--gold-dark);font-size:0.82rem;cursor:pointer;">
+          Save to Settings too
+        </button>
+        <button id="qp-publish-btn" style="padding:10px 20px;background:var(--gold);border:none;border-radius:var(--radius);color:var(--white);font-weight:700;cursor:pointer;">
+          <i class="fas fa-cloud-upload-alt"></i> Publish Now
+        </button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.querySelector('#qp-close').onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  async function doPublish(saveToSettings) {
+    const owner  = overlay.querySelector('#qp-owner')?.value.trim();
+    const repo   = overlay.querySelector('#qp-repo')?.value.trim();
+    const token  = overlay.querySelector('#qp-token')?.value.trim();
+    const errEl  = overlay.querySelector('#qp-error');
+    if (!owner || !repo || !token) {
+      errEl.style.display = 'block'; errEl.textContent = 'Please fill in all three fields.'; return;
+    }
+    errEl.style.display = 'none';
+    overlay.querySelector('#qp-publish-btn').disabled = true;
+    overlay.querySelector('#qp-publish-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing…';
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      const branch = saved.gh_branch || 'main';
+      await _publishViaGitHubAPI(token, owner, repo, json, branch);
+      if (saveToSettings) {
+        const updated = { ...saved, gh_owner: owner, gh_repo: repo, gh_token: token };
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
+        // Refresh settings panel fields if visible
+        ['set-gh-owner','set-gh-repo','set-gh-token'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = id === 'set-gh-owner' ? owner : id === 'set-gh-repo' ? repo : token;
+        });
+        showToast('✅ Published and credentials saved to Settings!', 'success');
+      } else {
+        showToast('✅ Published to GitHub! Live site updates in ~1 minute.', 'success');
+      }
+      localStorage.removeItem('dd_products_dirty');
+      updatePublishBadge();
+      overlay.remove();
+    } catch (e) {
+      errEl.style.display = 'block';
+      errEl.textContent = '❌ Publish failed: ' + (e.message || 'Check token and repo name.');
+      overlay.querySelector('#qp-publish-btn').disabled = false;
+      overlay.querySelector('#qp-publish-btn').innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Publish Now';
+    }
+  }
+
+  overlay.querySelector('#qp-publish-btn').onclick = () => doPublish(false);
+  overlay.querySelector('#qp-save-btn').onclick     = () => doPublish(true);
+}
+
+/** Export admin settings (including GitHub token) as a JSON file for use on other machines. */
+function exportAdminSettings() {
+  const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  if (!saved.gh_token) {
+    showToast('No settings to export yet. Save your GitHub credentials in Settings first.', 'error');
+    return;
+  }
+  const blob = new Blob([JSON.stringify(saved, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'dd-admin-settings.json';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Settings exported! Import this file on any other machine via Settings → Import Settings.', 'success');
+}
+window.exportAdminSettings = exportAdminSettings;
+
+/** Import admin settings from a JSON file exported by exportAdminSettings(). */
+function importAdminSettings() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json,application/json';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const settings = JSON.parse(text);
+      if (!settings || typeof settings !== 'object') throw new Error('Invalid file');
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      loadSettings(); // re-populate all form fields
+      showToast('✅ Settings imported! GitHub credentials are now active on this machine.', 'success');
+    } catch {
+      showToast('Failed to import settings — make sure you selected the correct JSON file.', 'error');
+    }
+  };
+  input.click();
+}
+window.importAdminSettings = importAdminSettings;
 
 /** Shows/hides the "Unpublished Changes" badge on the dashboard publish card. */
 function updatePublishBadge() {
@@ -1310,6 +1463,23 @@ async function deleteProduct(id, name) {
 window.deleteProduct = deleteProduct;
 
 // ── Orders ─────────────────────────────────────────────────
+// Status → badge CSS class + color for the dropdown border
+const ORDER_STATUS_META = {
+  Pending:   { cls: 'status-pending',   color: '#856404', border: '#ffc107' },
+  Confirmed: { cls: 'status-shipped',   color: '#004085', border: '#3498db' },
+  Shipped:   { cls: 'status-shipped',   color: '#0c5460', border: '#17a2b8' },
+  Delivered: { cls: 'status-delivered', color: '#155724', border: '#28a745' },
+  Cancelled: { cls: 'status-cancelled', color: '#721c24', border: '#e74c3c' },
+};
+
+function _orderStatusBadge(status) {
+  const m = ORDER_STATUS_META[status] || ORDER_STATUS_META.Pending;
+  const span = document.createElement('span');
+  span.className = `status-badge ${m.cls}`;
+  span.textContent = status || 'Pending';
+  return span;
+}
+
 function loadOrdersTable() {
   const tbody = document.getElementById('orders-tbody');
   if (!tbody) return;
@@ -1327,35 +1497,52 @@ function loadOrdersTable() {
 
   tbody.innerHTML = '';
   orders.forEach(o => {
-    const statusColor = { Pending:'pending', Confirmed:'paid', Shipped:'shipped', Delivered:'delivered', Cancelled:'cancelled' };
-    const payStatusColor = { Pending:'pending', Paid:'paid', Refunded:'shipped' };
-    const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
-    const itemsList = Array.isArray(o.items)
-      ? o.items.map(i => `${i.name} × ${i.qty}`).join(', ')
-      : (o.items || '');
+    const orderStatus  = o.order_status  || 'Pending';
+    const isCancelled  = orderStatus === 'Cancelled';
+    const payStatus    = o.payment_status || 'Pending';
+    const payClass     = payStatus === 'Paid' ? 'status-paid' : payStatus === 'Refunded' ? 'status-shipped' : 'status-pending';
+    const date         = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
+    const itemsList    = Array.isArray(o.items) ? o.items.map(i => `${i.name} × ${i.qty}`).join(', ') : String(o.items || '');
+    const statusMeta   = ORDER_STATUS_META[orderStatus] || ORDER_STATUS_META.Pending;
 
     const tr = document.createElement('tr');
+    // Fade out cancelled rows slightly
+    if (isCancelled) tr.style.opacity = '0.65';
+
     tr.innerHTML = `
       <td class="order-id-cell">#<span></span></td>
       <td>
         <strong></strong><br>
-        <small style="color:var(--gray);"></small>
+        <small style="color:var(--gray);font-size:0.75rem;"></small>
       </td>
-      <td style="max-width:160px;font-size:0.78rem;color:var(--gray);"></td>
-      <td style="font-weight:600;white-space:nowrap;"></td>
-      <td></td>
+      <td style="max-width:150px;font-size:0.78rem;color:var(--gray);line-height:1.4;"></td>
+      <td style="font-weight:700;white-space:nowrap;"></td>
       <td>
-        <select class="order-status-select" data-id="${htmlEscape(o.id)}" data-type="order_status"
-          style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.75rem;cursor:pointer;">
-          ${['Pending','Confirmed','Shipped','Delivered','Cancelled'].map(s =>
-            `<option value="${s}" ${o.order_status === s ? 'selected' : ''}>${s}</option>`
-          ).join('')}
-        </select>
+        <span class="status-badge ${payClass}"></span><br>
+        <small style="color:var(--gray);font-size:0.72rem;margin-top:3px;display:block;"></small>
+      </td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start;">
+          <span class="order-status-badge"></span>
+          ${isCancelled
+            ? `<span style="font-size:0.7rem;color:#721c24;font-weight:700;letter-spacing:.3px;">
+                 <i class="fas fa-lock"></i> FROZEN
+               </span>`
+            : `<select class="order-status-select" data-id="${htmlEscape(o.id)}"
+                 style="margin-top:2px;border:2px solid ${statusMeta.border};border-radius:6px;padding:4px 8px;
+                        font-size:0.73rem;font-weight:600;cursor:pointer;color:${statusMeta.color};
+                        background:var(--white);outline:none;">
+                 ${['Pending','Confirmed','Shipped','Delivered','Cancelled'].map(s =>
+                   `<option value="${s}" ${orderStatus === s ? 'selected' : ''}>${s}</option>`
+                 ).join('')}
+               </select>`
+          }
+        </div>
       </td>
       <td style="font-size:0.78rem;color:var(--gray);"></td>
-      <td>
+      <td style="white-space:nowrap;">
         <button class="btn btn-sm" data-action="view-order" data-id="${htmlEscape(o.id)}"
-          style="font-size:0.72rem;border:1px solid var(--gold);color:var(--gold-dark);margin-bottom:4px;display:block;width:100%;text-align:center;">
+          style="font-size:0.72rem;border:1px solid var(--gold);color:var(--gold-dark);display:block;width:100%;text-align:center;margin-bottom:4px;">
           <i class="fas fa-eye"></i> View
         </button>
         <button class="btn btn-sm" data-action="delete-order" data-id="${htmlEscape(o.id)}"
@@ -1363,42 +1550,67 @@ function loadOrdersTable() {
           <i class="fas fa-trash"></i> Delete
         </button>
       </td>`;
-    tr.querySelector('.order-id-cell span').textContent       = (o.id || '').slice(-8).toUpperCase();
+
+    tr.querySelector('.order-id-cell span').textContent              = (o.id || '').slice(-8).toUpperCase();
     tr.querySelectorAll('td')[1].querySelector('strong').textContent = o.customer_name || '—';
     tr.querySelectorAll('td')[1].querySelector('small').textContent  = o.customer_phone || '';
     tr.querySelectorAll('td')[2].textContent = itemsList;
     tr.querySelectorAll('td')[3].textContent = formatPKR(o.total_pkr || 0);
-    const payBadge = document.createElement('span');
-    payBadge.className = `status-badge status-${payStatusColor[o.payment_status] || 'pending'}`;
-    payBadge.textContent = o.payment_method ? `${o.payment_method} — ${o.payment_status || 'Pending'}` : (o.payment_status || 'Pending');
-    tr.querySelectorAll('td')[4].appendChild(payBadge);
+    // Payment badge
+    const payBadgeEl = tr.querySelector('.status-badge');
+    payBadgeEl.textContent = payStatus;
+    tr.querySelectorAll('td')[4].querySelector('small').textContent = o.payment_method || '';
+    // Order status badge
+    tr.querySelector('.order-status-badge').replaceWith(_orderStatusBadge(orderStatus));
     tr.querySelectorAll('td')[6].textContent = date;
     tbody.appendChild(tr);
   });
 
-  // Order status change
-  if (tbody._ddOrderHandler) tbody.removeEventListener('change', tbody._ddOrderHandler);
-  if (tbody._ddOrderClickHandler) tbody.removeEventListener('click', tbody._ddOrderClickHandler);
+  // ── Event handlers ────────────────────────────────────────
+  if (tbody._ddOrderHandler)      tbody.removeEventListener('change', tbody._ddOrderHandler);
+  if (tbody._ddOrderClickHandler) tbody.removeEventListener('click',  tbody._ddOrderClickHandler);
 
   tbody._ddOrderHandler = (e) => {
     const sel = e.target.closest('.order-status-select');
     if (!sel) return;
-    const id = sel.dataset.id;
-    const orders = JSON.parse(localStorage.getItem('dd_orders') || '[]');
-    const idx = orders.findIndex(o => o.id === id);
-    if (idx !== -1) {
-      orders[idx].order_status = sel.value;
-      localStorage.setItem('dd_orders', JSON.stringify(orders));
-      showToast(`Order status updated to "${sel.value}"`, 'success');
-      loadDashboard();
+    const newStatus = sel.value;
+    const id        = sel.dataset.id;
+    const all       = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+    const idx       = all.findIndex(o => o.id === id);
+    if (idx === -1) return;
+
+    // Guard: if already Cancelled, do not change (shouldn't be reachable since select is removed, but safety)
+    if (all[idx].order_status === 'Cancelled' && newStatus !== 'Cancelled') {
+      showToast('This order is cancelled and cannot be changed.', 'error');
+      sel.value = 'Cancelled';
+      return;
     }
+
+    all[idx].order_status = newStatus;
+    localStorage.setItem('dd_orders', JSON.stringify(all));
+
+    // Visual update in place (avoids full re-render)
+    const meta = ORDER_STATUS_META[newStatus] || ORDER_STATUS_META.Pending;
+    sel.style.borderColor = meta.border;
+    sel.style.color       = meta.color;
+    // Update the badge next to dropdown
+    const badgeEl = sel.closest('div')?.querySelector('.status-badge');
+    if (badgeEl) { badgeEl.className = `status-badge ${meta.cls}`; badgeEl.textContent = newStatus; }
+
+    // If Cancelled → freeze: replace select with lock notice and full re-render
+    if (newStatus === 'Cancelled') {
+      loadOrdersTable(); // re-render to freeze the row
+    }
+
+    loadDashboard();
+    showToast(`Order status updated to "${newStatus}"${newStatus === 'Cancelled' ? ' — status is now frozen.' : '.'}`, newStatus === 'Cancelled' ? 'error' : 'success');
   };
+
   tbody._ddOrderClickHandler = (e) => {
     const viewBtn   = e.target.closest('[data-action="view-order"]');
     const deleteBtn = e.target.closest('[data-action="delete-order"]');
     if (viewBtn) {
-      const id = viewBtn.dataset.id;
-      const o  = JSON.parse(localStorage.getItem('dd_orders') || '[]').find(x => x.id === id);
+      const o = JSON.parse(localStorage.getItem('dd_orders') || '[]').find(x => x.id === viewBtn.dataset.id);
       if (o) showOrderDetailModal(o);
     }
     if (deleteBtn) {
@@ -1410,8 +1622,9 @@ function loadOrdersTable() {
       showToast('Order deleted.', 'success');
     }
   };
+
   tbody.addEventListener('change', tbody._ddOrderHandler);
-  tbody.addEventListener('click', tbody._ddOrderClickHandler);
+  tbody.addEventListener('click',  tbody._ddOrderClickHandler);
 }
 
 function showOrderDetailModal(o) {
