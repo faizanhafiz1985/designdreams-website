@@ -369,6 +369,57 @@ async function _uploadBase64ImageToGitHub(dataUrl, productId, token, owner, repo
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
 }
 
+/**
+ * Upload a File object to Cloudinary via unsigned upload.
+ * Requires only cloudName + uploadPreset — no secret key needed.
+ * Returns the secure_url (permanent, CDN-backed, works on any machine).
+ */
+async function _uploadToCloudinary(file, cloudName, uploadPreset) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', uploadPreset);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`, {
+    method: 'POST',
+    body:   formData,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Cloudinary upload failed (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  if (!data.secure_url) throw new Error('Cloudinary did not return a URL — check your preset is set to Unsigned.');
+  return data.secure_url;
+}
+
+/** Test Cloudinary connection — called from Settings panel */
+async function testCloudinaryConnection() {
+  const result = document.getElementById('cld-test-result');
+  if (!result) return;
+  const saved  = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+  const cloud  = document.getElementById('set-cld-cloud')?.value?.trim()  || saved.cloudinary_cloud_name   || '';
+  const preset = document.getElementById('set-cld-preset')?.value?.trim() || saved.cloudinary_upload_preset || '';
+  if (!cloud || !preset) {
+    result.style.display = 'block';
+    result.style.cssText += ';background:#fff3cd;color:#856404;';
+    result.innerHTML = '⚠️ Enter Cloud Name and Upload Preset name first.';
+    return;
+  }
+  result.style.display = 'block';
+  result.style.cssText += ';background:#e8f4fd;color:#1a6fa8;';
+  result.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing Cloudinary…';
+  try {
+    // Fetch a tiny 1×1 pixel GIF to test the connection (no file upload needed)
+    const res = await fetch(`https://res.cloudinary.com/${encodeURIComponent(cloud)}/image/upload/sample.jpg`, { method: 'HEAD' });
+    if (!res.ok && res.status !== 404) throw new Error(`Could not reach Cloudinary (${res.status})`);
+    result.style.cssText = result.style.cssText.replace(/background:[^;]+/, 'background:#e8f5e9').replace(/color:[^;]+/, 'color:#2e7d32');
+    result.innerHTML = `✅ Cloud "<strong>${htmlEscape(cloud)}</strong>" is reachable. Upload preset "<strong>${htmlEscape(preset)}</strong>" will be used — make sure it is set to <em>Unsigned</em> in your Cloudinary dashboard.`;
+  } catch (e) {
+    result.style.cssText = result.style.cssText.replace(/background:[^;]+/, 'background:#fce4e4').replace(/color:[^;]+/, 'color:#c62828');
+    result.innerHTML = `❌ ${e.message}`;
+  }
+}
+window.testCloudinaryConnection = testCloudinaryConnection;
+
 /** Test GitHub connection — called from the Settings panel */
 async function testGitHubConnection() {
   const result = document.getElementById('gh-test-result');
@@ -1395,18 +1446,46 @@ window._pmSwitchImageTab = _pmSwitchImageTab;
 
 function _pmHandleFile(file) {
   _pmUploadedFile = file;
+  const prev     = document.getElementById('pm-img-preview');
+  const urlInput = document.getElementById('pm-image');
+  const dz       = document.getElementById('pm-dropzone');
+  const fn       = document.getElementById('pm-file-name');
+
+  // Show local preview immediately while upload happens
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const dataUrl = e.target.result;
-    // Show preview immediately (base64)
-    const prev = document.getElementById('pm-img-preview');
     if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
-    const urlInput = document.getElementById('pm-image');
-    if (urlInput) urlInput.value = ''; // clear URL field — upload takes over
-    const dz = document.getElementById('pm-dropzone');
-    if (dz) { dz.style.borderColor = 'var(--gold)'; dz.style.background = 'rgba(200,169,110,0.06)'; }
-    const fn = document.getElementById('pm-file-name');
-    if (fn) fn.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB) ready`;
+    if (urlInput) urlInput.value = '';
+
+    const saved  = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    const cloud  = saved.cloudinary_cloud_name    || '';
+    const preset = saved.cloudinary_upload_preset || '';
+
+    if (cloud && preset) {
+      // ── Cloudinary instant upload ──────────────────────────
+      if (dz) { dz.style.borderColor = '#3448c5'; dz.style.background = 'rgba(52,72,197,0.04)'; }
+      if (fn) fn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading to Cloudinary…';
+      try {
+        const url = await _uploadToCloudinary(file, cloud, preset);
+        if (urlInput) urlInput.value = url;        // permanent URL → no base64 ever stored
+        if (prev)     prev.src       = url;
+        _pmUploadedFile = null;                    // clear — URL is already set, no re-upload on Save
+        if (dz) { dz.style.borderColor = '#22c55e'; dz.style.background = 'rgba(34,197,94,0.05)'; }
+        if (fn) fn.innerHTML = `<i class="fas fa-check-circle" style="color:#22c55e;"></i> <strong>Uploaded!</strong> ${htmlEscape(file.name)}`;
+        showToast('✅ Image uploaded to Cloudinary — ready to save.', 'success');
+      } catch (err) {
+        if (dz) { dz.style.borderColor = '#e74c3c'; dz.style.background = 'rgba(231,76,60,0.04)'; }
+        if (fn) fn.innerHTML = `<i class="fas fa-exclamation-circle" style="color:#e74c3c;"></i> Upload failed: ${htmlEscape(err.message)} — will retry on Save.`;
+        showToast('Cloudinary upload failed: ' + err.message, 'error');
+        // _pmUploadedFile stays set → saveProduct() will attempt GitHub fallback
+      }
+    } else {
+      // ── No Cloudinary configured — will try GitHub/base64 on Save ──
+      if (dz) { dz.style.borderColor = 'var(--gold)'; dz.style.background = 'rgba(200,169,110,0.06)'; }
+      if (fn) fn.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB) — ready to save`;
+      showToast('⚠️ Cloudinary not configured. Image will be uploaded to GitHub on Save (requires GitHub credentials in Settings).', '');
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -1450,39 +1529,54 @@ async function saveProduct() {
   if (errEl) errEl.classList.add('hidden');
 
   try {
-    // ── If a file was uploaded, try GitHub upload first ──────
+    // ── If a file is still pending (Cloudinary upload failed or not configured) ──
     if (hasUpload) {
-      const saved   = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-      const ghToken = saved.gh_token  || '';
-      const ghOwner = saved.gh_owner  || '';
-      const ghRepo  = saved.gh_repo   || '';
-      const ghBranch= saved.gh_branch || 'main';
+      const saved    = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      const cloud    = saved.cloudinary_cloud_name    || '';
+      const preset   = saved.cloudinary_upload_preset || '';
+      const ghToken  = saved.gh_token  || '';
+      const ghOwner  = saved.gh_owner  || '';
+      const ghRepo   = saved.gh_repo   || '';
+      const ghBranch = saved.gh_branch || 'main';
 
-      if (ghToken && ghOwner && ghRepo) {
+      if (cloud && preset) {
+        // ── Cloudinary (retry — may have failed in _pmHandleFile) ──
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading to Cloudinary…';
+        try {
+          const url = await _uploadToCloudinary(_pmUploadedFile, cloud, preset);
+          body.image_url = url;
+          showToast('✅ Image uploaded to Cloudinary.', 'success');
+        } catch (cldErr) {
+          if (errEl) { errEl.textContent = `Cloudinary upload failed: ${cldErr.message}`; errEl.classList.remove('hidden'); }
+          btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Product';
+          return;
+        }
+      } else if (ghToken && ghOwner && ghRepo) {
+        // ── GitHub fallback ────────────────────────────────────
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading image to GitHub…';
         try {
           const rawUrl = await _uploadImageToGitHub(_pmUploadedFile, productId, ghToken, ghOwner, ghRepo, ghBranch);
           body.image_url = rawUrl;
           showToast('Image uploaded to GitHub ✓', 'success');
         } catch (imgErr) {
-          // Fallback: store base64 locally (cross-machine issue explained to user)
-          const reader = new FileReader();
+          // Last resort: base64 (device-local only — user is warned)
           const dataUrl = await new Promise((resolve) => {
-            reader.onload = e => resolve(e.target.result);
-            reader.readAsDataURL(_pmUploadedFile);
+            const r = new FileReader();
+            r.onload = ev => resolve(ev.target.result);
+            r.readAsDataURL(_pmUploadedFile);
           });
           body.image_url = dataUrl;
-          showToast('GitHub image upload failed — stored locally only. Set up GitHub in Settings to enable cross-machine images.', 'error');
+          showToast('⚠️ GitHub upload failed — image saved locally only. Set up Cloudinary in Settings for cross-device uploads.', 'error');
         }
       } else {
-        // No GitHub: store base64 locally
-        const reader = new FileReader();
+        // ── No upload service configured → base64 fallback ────
         const dataUrl = await new Promise((resolve) => {
-          reader.onload = e => resolve(e.target.result);
-          reader.readAsDataURL(_pmUploadedFile);
+          const r = new FileReader();
+          r.onload = ev => resolve(ev.target.result);
+          r.readAsDataURL(_pmUploadedFile);
         });
         body.image_url = dataUrl;
-        showToast('Image stored locally only. Add GitHub credentials in Settings to upload images to the server.', '');
+        showToast('⚠️ Image saved locally only. Configure Cloudinary in Settings so images work on all devices.', '');
       }
       _pmUploadedFile = null;
     }
@@ -1892,6 +1986,8 @@ function loadSettings() {
     set('set-emailjs-service',  saved.emailjs_service  || '');
     set('set-emailjs-template', saved.emailjs_template || '');
     set('set-emailjs-key',      saved.emailjs_key      || '');
+    set('set-cld-cloud',  saved.cloudinary_cloud_name    || '');
+    set('set-cld-preset', saved.cloudinary_upload_preset || '');
     set('set-gh-owner',  saved.gh_owner  || '');
     set('set-gh-repo',   saved.gh_repo   || '');
     set('set-gh-branch', saved.gh_branch || 'main');
@@ -1934,6 +2030,8 @@ function saveSettings() {
     emailjs_service:  get('set-emailjs-service'),
     emailjs_template: get('set-emailjs-template'),
     emailjs_key:      get('set-emailjs-key'),
+    cloudinary_cloud_name:    get('set-cld-cloud'),
+    cloudinary_upload_preset: get('set-cld-preset'),
     gh_owner:      get('set-gh-owner'),
     gh_repo:       get('set-gh-repo'),
     gh_branch:     get('set-gh-branch') || 'main',

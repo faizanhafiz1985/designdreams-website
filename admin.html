@@ -792,6 +792,45 @@
         </div>
 
         <!-- GitHub Auto-Publish -->
+        <!-- Cloudinary Image Upload (Business Users) -->
+        <div style="background:var(--white); border-radius:var(--radius-md); padding:28px; box-shadow:var(--shadow-sm); margin-top:24px; border-left:4px solid #3448c5;">
+          <h3 style="font-size:1rem; font-weight:600; margin-bottom:8px;">
+            <i class="fas fa-cloud-upload-alt" style="vertical-align:middle;margin-right:6px;color:#3448c5;"></i>
+            Cloudinary Image Upload
+            <span style="background:#e8eafd;color:#3448c5;font-size:0.7rem;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:6px;">RECOMMENDED FOR BUSINESS</span>
+          </h3>
+          <p style="font-size:0.8rem;color:var(--gray);margin-bottom:16px;line-height:1.6;">
+            Once set up, anyone can upload product images from <strong>any device</strong> — no GitHub credentials needed.
+            Images upload instantly to Cloudinary's free CDN and the permanent URL is saved automatically.
+            <br><br>
+            <strong>Free one-time setup (developer only):</strong><br>
+            1. Go to <a href="https://cloudinary.com/users/register/free" target="_blank" style="color:var(--gold);">cloudinary.com</a> → create a free account (25 GB free)<br>
+            2. Dashboard → <strong>Settings → Upload → Upload Presets → Add upload preset</strong><br>
+            3. Set signing mode to <strong>"Unsigned"</strong> → Save<br>
+            4. Copy your <strong>Cloud Name</strong> (top-left of dashboard) and the <strong>preset name</strong> → paste below → Save Settings
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="form-group">
+              <label>Cloud Name</label>
+              <input type="text" id="set-cld-cloud" placeholder="e.g. dxxxxxxxx" autocomplete="off" />
+              <small style="color:var(--gray);font-size:0.73rem;">Shown on your Cloudinary dashboard (top-left).</small>
+            </div>
+            <div class="form-group">
+              <label>Upload Preset Name <span style="color:#e74c3c;">*must be Unsigned*</span></label>
+              <input type="text" id="set-cld-preset" placeholder="e.g. designdreams_unsigned" autocomplete="off" />
+              <small style="color:var(--gray);font-size:0.73rem;">Settings → Upload → Upload Presets → mode = Unsigned.</small>
+            </div>
+          </div>
+          <div id="cld-test-result" style="display:none;margin-top:12px;padding:10px 14px;border-radius:6px;font-size:0.82rem;"></div>
+          <div style="margin-top:14px;">
+            <button class="btn btn-sm" onclick="testCloudinaryConnection()"
+                    style="background:#3448c5;color:#fff;border:none;display:inline-flex;align-items:center;gap:6px;">
+              <i class="fas fa-plug"></i> Test Cloudinary Connection
+            </button>
+          </div>
+        </div>
+
+        <!-- GitHub Auto-Publish -->
         <div style="background:var(--white); border-radius:var(--radius-md); padding:28px; box-shadow:var(--shadow-sm); margin-top:24px; border-left:4px solid #24292f;">
           <h3 style="font-size:1rem; font-weight:600; margin-bottom:8px;">
             <i class="fab fa-github" style="font-size:1.1rem;vertical-align:middle;margin-right:6px;color:#24292f;"></i>
