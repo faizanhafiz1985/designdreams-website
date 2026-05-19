@@ -110,5 +110,19 @@
     "badge": "New",
     "rating": 4.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779220684747",
+    "name": "Stainless Steel Pendant Set",
+    "category": "Sets",
+    "price": 4000,
+    "price_usd": 15.75,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779220684747.png",
+    "short_desc": "Branded stainless steel original lifetime daily wear",
+    "description": "",
+    "material": "925 Stainless Steel, Gold Plated",
+    "badge": "Bestseller",
+    "rating": 5.5,
+    "in_stock": true
   }
 ]
