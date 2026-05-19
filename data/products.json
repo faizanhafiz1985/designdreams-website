@@ -54,5 +54,19 @@
     "badge": "New",
     "rating": 4.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779217142622",
+    "name": "Stainless Steel Combo Chain Set",
+    "category": "Sets",
+    "price": 5499,
+    "price_usd": 12.25,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779217142622.jpeg",
+    "short_desc": "3-piece matching necklace, earrings & bracelet and ring",
+    "description": "",
+    "material": "Stainless Steel, Gold Plated",
+    "badge": "Bestseller",
+    "rating": 4.8,
+    "in_stock": true
   }
 ]
