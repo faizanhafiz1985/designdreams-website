@@ -124,5 +124,19 @@
     "badge": "Bestseller",
     "rating": 5.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779220876349",
+    "name": "Zircon AD Earrings",
+    "category": "Earrings",
+    "price": 1250,
+    "price_usd": 0,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779220876349.jpeg",
+    "short_desc": "",
+    "description": "",
+    "material": "",
+    "badge": "New",
+    "rating": 5.5,
+    "in_stock": true
   }
 ]
