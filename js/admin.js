@@ -1592,14 +1592,19 @@ function loadOrdersTable() {
         <small style="color:var(--gray);font-size:0.72rem;margin-top:3px;display:block;"></small>
       </td>
       <td style="text-align:center;">
-        <label style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
-          <input type="checkbox" class="pay-received-chk" data-id="${htmlEscape(o.id)}"
-            ${isReceived ? 'checked' : ''}
-            style="width:18px;height:18px;cursor:pointer;accent-color:#22c55e;" />
-          <span style="font-size:0.65rem;color:${isReceived ? '#22c55e' : 'var(--gray)'};">
-            ${isReceived ? 'Received' : 'Mark'}
-          </span>
-        </label>
+        ${isCancelled
+          ? `<span style="font-size:0.7rem;color:#721c24;font-weight:700;letter-spacing:.3px;display:inline-flex;flex-direction:column;align-items:center;gap:3px;">
+               <i class="fas fa-lock"></i><span>Locked</span>
+             </span>`
+          : `<label style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+               <input type="checkbox" class="pay-received-chk" data-id="${htmlEscape(o.id)}"
+                 ${isReceived ? 'checked' : ''}
+                 style="width:18px;height:18px;cursor:pointer;accent-color:#22c55e;" />
+               <span style="font-size:0.65rem;color:${isReceived ? '#22c55e' : 'var(--gray)'};">
+                 ${isReceived ? 'Received' : 'Mark'}
+               </span>
+             </label>`
+        }
       </td>
       <td>
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start;">
@@ -1657,6 +1662,12 @@ function loadOrdersTable() {
       const id  = chk.dataset.id;
       const all = JSON.parse(localStorage.getItem('dd_orders') || '[]');
       const idx = all.findIndex(o => o.id === id);
+      // Guard: cancelled orders are frozen — revert the checkbox and bail
+      if (idx !== -1 && all[idx].order_status === 'Cancelled') {
+        chk.checked = !chk.checked; // revert the browser toggle
+        showToast('This order is cancelled — payment status is locked.', 'error');
+        return;
+      }
       if (idx !== -1) {
         all[idx].payment_status = chk.checked ? 'Received' : 'Pending';
         localStorage.setItem('dd_orders', JSON.stringify(all));
