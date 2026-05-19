@@ -331,6 +331,44 @@ async function _uploadImageToGitHub(file, productId, token, owner, repo, branch 
   return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
 }
 
+/**
+ * Upload a base64 data-URL image (already in memory) to GitHub.
+ * Used during publish to auto-migrate device-uploaded images to GitHub.
+ */
+async function _uploadBase64ImageToGitHub(dataUrl, productId, token, owner, repo, branch = 'main') {
+  const matches = dataUrl.match(/^data:image\/([a-zA-Z+]+);base64,(.+)$/s);
+  if (!matches) throw new Error('Invalid image data URL');
+  const rawExt = matches[1].toLowerCase().replace('jpeg', 'jpg').replace('+xml', '').replace('svg ', 'svg');
+  const ext    = rawExt || 'jpg';
+  const base64 = matches[2];
+  const path   = `images/products/${productId}.${ext}`;
+  const url    = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept':        'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  // Get existing SHA (needed to overwrite an existing file)
+  let sha;
+  const getRes = await fetch(`${url}?ref=${encodeURIComponent(branch)}`, { headers });
+  if (getRes.ok) { const d = await getRes.json(); sha = d.sha; }
+
+  const body = { message: `Auto-upload product image ${productId}.${ext} via publish`, content: base64, branch };
+  if (sha) body.sha = sha;
+
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!putRes.ok) {
+    const err = await putRes.json().catch(() => ({}));
+    throw new Error(err.message || `GitHub upload failed (HTTP ${putRes.status})`);
+  }
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
+}
+
 /** Test GitHub connection — called from the Settings panel */
 async function testGitHubConnection() {
   const result = document.getElementById('gh-test-result');
@@ -430,25 +468,56 @@ function publishChangesToWebsite() {
       // ── Detect locally-uploaded (base64) images ───────────
       const base64Prods = products.filter(p => p.image_url && p.image_url.startsWith('data:'));
       if (base64Prods.length) {
-        setBtnState('error');
-        const names = base64Prods.map(p => `"${p.name}"`).join(', ');
-        showToast(
-          `❌ ${base64Prods.length} product(s) have device-uploaded images that only exist in this browser: ${names}. ` +
-          `Open each product → Upload tab → re-upload so it saves to GitHub, then publish again.`,
-          'error'
-        );
-        // Also show a persistent panel notice
-        const panel = document.getElementById('panel-products');
-        let warn = document.getElementById('base64-warning');
-        if (!warn) {
-          warn = document.createElement('div');
-          warn.id = 'base64-warning';
-          warn.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:0.85rem;color:#7b5800;';
-          panel?.insertBefore(warn, panel.firstElementChild?.nextElementSibling);
+        // Peek at credentials now so we can decide whether to auto-upload or block
+        const _s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        const _t = _s.gh_token || '', _o = _s.gh_owner || '', _r = _s.gh_repo || '', _b = _s.gh_branch || 'main';
+
+        if (!_t || !_o || !_r) {
+          // No GitHub credentials — cannot upload; block with clear instructions
+          setBtnState('error');
+          const names = base64Prods.map(p => `"${p.name}"`).join(', ');
+          showToast(
+            `❌ ${base64Prods.length} product(s) have device-uploaded images. ` +
+            `Save GitHub credentials in Settings first, then publish again.`,
+            'error'
+          );
+          const prodPanel = document.getElementById('panel-products');
+          let warn = document.getElementById('base64-warning');
+          if (!warn) {
+            warn = document.createElement('div');
+            warn.id = 'base64-warning';
+            warn.style.cssText = 'background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px 18px;margin-bottom:16px;font-size:0.85rem;color:#7b5800;';
+            prodPanel?.insertBefore(warn, prodPanel.firstElementChild?.nextElementSibling);
+          }
+          warn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Cannot publish:</strong>
+            ${base64Prods.length} product(s) have images stored only in this browser.
+            Go to <strong>Settings → GitHub</strong> and save your credentials, then publish again.
+            <ul style="margin:8px 0 0 18px;">${base64Prods.map(p => `<li>${htmlEscape(p.name)}</li>`).join('')}</ul>`;
+          return;
         }
-        warn.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Cannot publish:</strong> ${base64Prods.length} product(s) have images stored only in this browser (device-uploaded without GitHub credentials). Re-open each product → Upload tab → re-upload the image. Make sure GitHub credentials are saved in Settings first.
-          <ul style="margin:8px 0 0 18px;">${base64Prods.map(p => `<li>${htmlEscape(p.name)}</li>`).join('')}</ul>`;
-        return;
+
+        // ── Credentials exist → auto-upload each base64 image to GitHub ──
+        setBtnState('loading');
+        showToast(`⬆️ Auto-uploading ${base64Prods.length} image(s) to GitHub… please wait.`, '');
+        const uploadFails = [];
+        for (const p of base64Prods) {
+          try {
+            const rawUrl = await _uploadBase64ImageToGitHub(p.image_url, p.id, _t, _o, _r, _b);
+            p.image_url = rawUrl; // mutates products[] in-place (same object reference)
+          } catch (upErr) {
+            uploadFails.push(`${p.name}: ${upErr.message}`);
+          }
+        }
+        if (uploadFails.length) {
+          setBtnState('error');
+          showToast(`❌ ${uploadFails.length} image upload(s) failed: ${uploadFails.join(' | ')}`, 'error');
+          return;
+        }
+        // Persist updated URLs back to localStorage so future publishes are clean
+        localStorage.setItem('dd_products', JSON.stringify(products));
+        document.getElementById('base64-warning')?.remove();
+        showToast('✅ All images uploaded to GitHub!', 'success');
+        // Fall through → build json from updated products array and publish
       }
 
       const json = JSON.stringify(products, null, 2);
@@ -1488,7 +1557,7 @@ function loadOrdersTable() {
   setText('orders-count', `${orders.length} order${orders.length !== 1 ? 's' : ''}`);
 
   if (!orders.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="padding:40px;">
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state" style="padding:40px;">
       <i class="fas fa-receipt" style="font-size:2rem;color:var(--border);display:block;margin-bottom:12px;"></i>
       No orders yet — they'll appear here when customers place orders.
     </td></tr>`;
@@ -1500,7 +1569,8 @@ function loadOrdersTable() {
     const orderStatus  = o.order_status  || 'Pending';
     const isCancelled  = orderStatus === 'Cancelled';
     const payStatus    = o.payment_status || 'Pending';
-    const payClass     = payStatus === 'Paid' ? 'status-paid' : payStatus === 'Refunded' ? 'status-shipped' : 'status-pending';
+    const isReceived   = payStatus === 'Received' || payStatus === 'Paid';
+    const payClass     = isReceived ? 'status-paid' : payStatus === 'Refunded' ? 'status-shipped' : 'status-pending';
     const date         = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
     const itemsList    = Array.isArray(o.items) ? o.items.map(i => `${i.name} × ${i.qty}`).join(', ') : String(o.items || '');
     const statusMeta   = ORDER_STATUS_META[orderStatus] || ORDER_STATUS_META.Pending;
@@ -1515,11 +1585,21 @@ function loadOrdersTable() {
         <strong></strong><br>
         <small style="color:var(--gray);font-size:0.75rem;"></small>
       </td>
-      <td style="max-width:150px;font-size:0.78rem;color:var(--gray);line-height:1.4;"></td>
-      <td style="font-weight:700;white-space:nowrap;"></td>
+      <td style="max-width:150px;font-size:0.78rem;color:var(--gray);line-height:1.4;" class="td-items"></td>
+      <td style="font-weight:700;white-space:nowrap;" class="td-total"></td>
       <td>
         <span class="status-badge ${payClass}"></span><br>
         <small style="color:var(--gray);font-size:0.72rem;margin-top:3px;display:block;"></small>
+      </td>
+      <td style="text-align:center;">
+        <label style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;">
+          <input type="checkbox" class="pay-received-chk" data-id="${htmlEscape(o.id)}"
+            ${isReceived ? 'checked' : ''}
+            style="width:18px;height:18px;cursor:pointer;accent-color:#22c55e;" />
+          <span style="font-size:0.65rem;color:${isReceived ? '#22c55e' : 'var(--gray)'};">
+            ${isReceived ? 'Received' : 'Mark'}
+          </span>
+        </label>
       </td>
       <td>
         <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-start;">
@@ -1539,7 +1619,7 @@ function loadOrdersTable() {
           }
         </div>
       </td>
-      <td style="font-size:0.78rem;color:var(--gray);"></td>
+      <td style="font-size:0.78rem;color:var(--gray);" class="td-date"></td>
       <td style="white-space:nowrap;">
         <button class="btn btn-sm" data-action="view-order" data-id="${htmlEscape(o.id)}"
           style="font-size:0.72rem;border:1px solid var(--gold);color:var(--gold-dark);display:block;width:100%;text-align:center;margin-bottom:4px;">
@@ -1554,15 +1634,15 @@ function loadOrdersTable() {
     tr.querySelector('.order-id-cell span').textContent              = (o.id || '').slice(-8).toUpperCase();
     tr.querySelectorAll('td')[1].querySelector('strong').textContent = o.customer_name || '—';
     tr.querySelectorAll('td')[1].querySelector('small').textContent  = o.customer_phone || '';
-    tr.querySelectorAll('td')[2].textContent = itemsList;
-    tr.querySelectorAll('td')[3].textContent = formatPKR(o.total_pkr || 0);
+    tr.querySelector('.td-items').textContent  = itemsList;
+    tr.querySelector('.td-total').textContent  = formatPKR(o.total_pkr || 0);
     // Payment badge
     const payBadgeEl = tr.querySelector('.status-badge');
     payBadgeEl.textContent = payStatus;
     tr.querySelectorAll('td')[4].querySelector('small').textContent = o.payment_method || '';
     // Order status badge
     tr.querySelector('.order-status-badge').replaceWith(_orderStatusBadge(orderStatus));
-    tr.querySelectorAll('td')[6].textContent = date;
+    tr.querySelector('.td-date').textContent = date;
     tbody.appendChild(tr);
   });
 
@@ -1571,6 +1651,30 @@ function loadOrdersTable() {
   if (tbody._ddOrderClickHandler) tbody.removeEventListener('click',  tbody._ddOrderClickHandler);
 
   tbody._ddOrderHandler = (e) => {
+    // ── ✓ Paid checkbox ──────────────────────────────────────
+    const chk = e.target.closest('.pay-received-chk');
+    if (chk) {
+      const id  = chk.dataset.id;
+      const all = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+      const idx = all.findIndex(o => o.id === id);
+      if (idx !== -1) {
+        all[idx].payment_status = chk.checked ? 'Received' : 'Pending';
+        localStorage.setItem('dd_orders', JSON.stringify(all));
+        // Update badge in the same row without full re-render
+        const badge = chk.closest('tr')?.querySelector('.status-badge');
+        if (badge) {
+          badge.textContent  = all[idx].payment_status;
+          badge.className    = `status-badge ${chk.checked ? 'status-paid' : 'status-pending'}`;
+        }
+        const lbl = chk.nextElementSibling;
+        if (lbl) { lbl.textContent = chk.checked ? 'Received' : 'Mark'; lbl.style.color = chk.checked ? '#22c55e' : 'var(--gray)'; }
+        loadDashboard();
+        showToast(chk.checked ? '✅ Payment marked as Received.' : 'Payment reset to Pending.', chk.checked ? 'success' : '');
+      }
+      return;
+    }
+
+    // ── Order status select ──────────────────────────────────
     const sel = e.target.closest('.order-status-select');
     if (!sel) return;
     const newStatus = sel.value;
@@ -2127,65 +2231,175 @@ const DEFAULT_CATEGORIES = [
   { name: 'Sets',      image_url: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80' },
 ];
 
+function getCategoriesList() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('dd_categories') || '[]');
+    if (Array.isArray(stored) && stored.length > 0) return stored;
+  } catch {}
+  return DEFAULT_CATEGORIES.map(d => ({ ...d }));
+}
+function saveCategoriesList(cats) {
+  localStorage.setItem('dd_categories', JSON.stringify(cats));
+}
+
+/** Keep the product modal <select> in sync whenever categories change. */
+function _updateProductCategoryOptions() {
+  const sel = document.getElementById('pm-category');
+  if (!sel) return;
+  const current = sel.value;
+  const cats    = getCategoriesList();
+  sel.innerHTML = cats.map(c =>
+    `<option value="${htmlEscape(c.name)}"${c.name === current ? ' selected' : ''}>${htmlEscape(c.name)}</option>`
+  ).join('');
+}
+window._updateProductCategoryOptions = _updateProductCategoryOptions;
+
+function _renderCategoryCard(cat, i) {
+  return `
+    <div style="background:var(--white);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm);">
+      <div style="aspect-ratio:4/3;overflow:hidden;background:var(--gray-light);position:relative;">
+        <img id="cat-preview-${i}" src="${htmlEscape(cat.image_url || '')}" alt="${htmlEscape(cat.name)}"
+             style="width:100%;height:100%;object-fit:cover;" onerror="this.style.opacity=0.3" />
+        <button data-action="delete-cat" data-idx="${i}"
+          style="position:absolute;top:8px;right:8px;background:rgba(231,76,60,0.88);border:none;
+                 color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:0.78rem;
+                 display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.3);"
+          title="Delete this category">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div style="padding:14px;">
+        <div style="margin-bottom:10px;">
+          <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;color:var(--gray);">Category Name</label>
+          <input type="text" id="cat-name-edit-${i}" value="${htmlEscape(cat.name)}"
+                 style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;font-weight:600;" />
+        </div>
+        <div>
+          <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;color:var(--gray);">Image URL</label>
+          <input type="url" id="cat-url-${i}" value="${htmlEscape(cat.image_url || '')}"
+                 placeholder="https://images.unsplash.com/…"
+                 style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;"
+                 data-cat-idx="${i}" />
+        </div>
+      </div>
+    </div>`;
+}
+
 function loadCategoriesPanel() {
   const panel = document.getElementById('panel-categories');
   if (!panel) return;
+  renderCategoriesPanel(panel);
+}
 
-  let categories = DEFAULT_CATEGORIES.map(d => ({ ...d }));
-  try {
-    const stored = JSON.parse(localStorage.getItem('dd_categories') || '[]');
-    if (Array.isArray(stored) && stored.length > 0) {
-      categories = DEFAULT_CATEGORIES.map(def => {
-        const found = stored.find(s => s.name === def.name);
-        return found ? { ...def, ...found } : def;
-      });
-    }
-  } catch {}
-
+function renderCategoriesPanel(panel) {
+  const categories = getCategoriesList();
   panel.innerHTML = `
     <div class="panel-header">
       <h2>Category Cards</h2>
-      <button class="btn btn-gold btn-sm" id="save-categories-btn"><i class="fas fa-save"></i> Save Categories</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-gold btn-sm" id="add-category-btn"><i class="fas fa-plus"></i> Add Category</button>
+        <button class="btn btn-outline-gold btn-sm" id="save-categories-btn"><i class="fas fa-save"></i> Save All</button>
+      </div>
     </div>
-    <p style="color:var(--gray);font-size:0.85rem;margin-bottom:24px;">
-      Edit the background images for each category card shown on the homepage.
+    <p style="color:var(--gray);font-size:0.85rem;margin-bottom:20px;">
+      Add, rename, or delete categories. These appear as shop filter buttons and on the homepage.
+      <strong>Any new category you add here also becomes available in the Products form.</strong>
     </p>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;">
-      ${categories.map((cat, i) => `
-        <div style="background:var(--white);border-radius:var(--radius-md);overflow:hidden;box-shadow:var(--shadow-sm);">
-          <div style="aspect-ratio:4/3;overflow:hidden;background:var(--gray-light);">
-            <img id="cat-preview-${i}" src="${htmlEscape(cat.image_url || '')}" alt="${htmlEscape(cat.name)}"
-                 style="width:100%;height:100%;object-fit:cover;"
-                 onerror="this.style.opacity=0.3" />
-          </div>
-          <div style="padding:14px;">
-            <strong style="display:block;margin-bottom:8px;font-size:0.9rem;">${htmlEscape(cat.name)}</strong>
-            <input type="hidden" id="cat-name-${i}" value="${htmlEscape(cat.name)}" />
-            <label style="font-size:0.78rem;font-weight:600;display:block;margin-bottom:6px;">Image URL</label>
-            <input type="url" id="cat-url-${i}" value="${htmlEscape(cat.image_url || '')}"
-                   placeholder="https://images.unsplash.com/…"
-                   style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.78rem;"
-                   data-cat-idx="${i}" />
-          </div>
-        </div>`).join('')}
-    </div>`;
 
-  // Live preview
-  panel.addEventListener('input', (e) => {
+    <!-- Add New Category Form -->
+    <div id="new-cat-form" style="display:none;background:#fffdf5;border:1px solid var(--gold);border-radius:var(--radius-md);padding:20px;margin-bottom:20px;">
+      <h4 style="font-size:0.92rem;font-weight:700;margin-bottom:14px;color:var(--gold-dark);">
+        <i class="fas fa-plus-circle"></i> New Category
+      </h4>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Name *</label>
+          <input type="text" id="new-cat-name" placeholder="e.g. Anklets"
+                 style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;" />
+        </div>
+        <div>
+          <label style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Image URL (optional)</label>
+          <input type="url" id="new-cat-url" placeholder="https://images.unsplash.com/…"
+                 style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button id="new-cat-save" class="btn btn-gold btn-sm"><i class="fas fa-check"></i> Add Category</button>
+        <button id="new-cat-cancel" class="btn btn-sm" style="border:1px solid var(--border);">Cancel</button>
+      </div>
+    </div>
+
+    <div id="categories-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px;">
+      ${categories.map((cat, i) => _renderCategoryCard(cat, i)).join('')}
+    </div>
+
+    ${categories.length === 0 ? `
+      <div class="empty-state" style="padding:40px;">
+        <i class="fas fa-th-large" style="font-size:2.5rem;color:var(--border);display:block;margin-bottom:12px;"></i>
+        <p style="font-weight:600;">No categories yet</p>
+        <p style="font-size:0.82rem;color:var(--gray);">Click "Add Category" to create your first one.</p>
+      </div>` : ''}`;
+
+  // ── Add Category button ──────────────────────────────────
+  document.getElementById('add-category-btn').onclick = () => {
+    const form = document.getElementById('new-cat-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    if (form.style.display === 'block') document.getElementById('new-cat-name').focus();
+  };
+  document.getElementById('new-cat-cancel').onclick = () => {
+    document.getElementById('new-cat-form').style.display = 'none';
+    document.getElementById('new-cat-name').value = '';
+    document.getElementById('new-cat-url').value  = '';
+  };
+  document.getElementById('new-cat-save').onclick = () => {
+    const name = sanitizeInput((document.getElementById('new-cat-name')?.value || '').trim());
+    const url  = (document.getElementById('new-cat-url')?.value || '').trim();
+    if (!name) { showToast('Category name is required.', 'error'); return; }
+    const cats = getCategoriesList();
+    if (cats.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+      showToast(`Category "${name}" already exists.`, 'error'); return;
+    }
+    cats.push({ name, image_url: url || 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80' });
+    saveCategoriesList(cats);
+    _updateProductCategoryOptions();
+    showToast(`✅ Category "${name}" added!`, 'success');
+    renderCategoriesPanel(panel);
+  };
+
+  // ── Save All button ──────────────────────────────────────
+  document.getElementById('save-categories-btn').onclick = () => {
+    const cats = getCategoriesList().map((orig, i) => ({
+      name:      sanitizeInput((document.getElementById(`cat-name-edit-${i}`)?.value || orig.name).trim()),
+      image_url: (document.getElementById(`cat-url-${i}`)?.value || '').trim(),
+    })).filter(c => c.name);
+    saveCategoriesList(cats);
+    _updateProductCategoryOptions();
+    showToast('✅ Categories saved! Refresh the homepage to see changes.', 'success');
+    renderCategoriesPanel(panel);
+  };
+
+  // ── Live preview & delete delegation ────────────────────
+  const grid = document.getElementById('categories-grid');
+  if (!grid) return;
+  grid.addEventListener('input', (e) => {
     const idx = e.target.dataset.catIdx;
     if (idx !== undefined) {
-      const preview = document.getElementById(`cat-preview-${idx}`);
-      if (preview) { preview.src = e.target.value; preview.style.opacity = '1'; }
+      const prev = document.getElementById(`cat-preview-${idx}`);
+      if (prev) { prev.src = e.target.value; prev.style.opacity = '1'; }
     }
   });
-
-  document.getElementById('save-categories-btn')?.addEventListener('click', () => {
-    const saved = categories.map((_, i) => ({
-      name:      document.getElementById(`cat-name-${i}`)?.value || '',
-      image_url: document.getElementById(`cat-url-${i}`)?.value.trim() || '',
-    }));
-    localStorage.setItem('dd_categories', JSON.stringify(saved));
-    showToast('Category cards saved! Refresh the homepage to see changes.', 'success');
+  grid.addEventListener('click', (e) => {
+    const delBtn = e.target.closest('[data-action="delete-cat"]');
+    if (!delBtn) return;
+    const i    = parseInt(delBtn.dataset.idx, 10);
+    const cats = getCategoriesList();
+    const name = cats[i]?.name || '';
+    if (!confirm(`Delete category "${name}"? This only removes it from the category list — existing products keep their category label.`)) return;
+    cats.splice(i, 1);
+    saveCategoriesList(cats);
+    _updateProductCategoryOptions();
+    showToast(`Category "${name}" deleted.`, 'success');
+    renderCategoriesPanel(panel);
   });
 }
 
