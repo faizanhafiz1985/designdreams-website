@@ -507,8 +507,14 @@ function publishChangesToWebsite() {
   const _run = async () => {
     try {
       const products = JSON.parse(localStorage.getItem('dd_products') || '[]');
+      // Legacy override merge — skip base64 values (they would bloat the JSON and are device-local)
       const overrides = JSON.parse(localStorage.getItem('dd_product_images_override') || '{}');
-      products.forEach(p => { if (overrides[p.id]) p.image_url = overrides[p.id]; });
+      products.forEach(p => {
+        const ov = overrides[p.id];
+        if (ov && !ov.startsWith('data:')) p.image_url = ov;
+      });
+      // Purge the legacy key now that it's been applied
+      if (Object.keys(overrides).length) localStorage.removeItem('dd_product_images_override');
 
       if (!products.length) {
         setBtnState('error');
@@ -1589,12 +1595,8 @@ async function saveProduct() {
       products.push(body);
     }
     saveProductsToStorage(products);
-    // Also keep image override in sync
-    if (body.image_url) {
-      const overrides = JSON.parse(localStorage.getItem('dd_product_images_override') || '{}');
-      overrides[body.id] = body.image_url;
-      localStorage.setItem('dd_product_images_override', JSON.stringify(overrides));
-    }
+    // Remove legacy override key — image_url is now stored directly in dd_products
+    localStorage.removeItem('dd_product_images_override');
     localStorage.setItem('dd_products_dirty', '1');
     updatePublishBadge();
     showToast('Product saved ✓ — click "Publish to Website" to make it live for all visitors.', 'success');
