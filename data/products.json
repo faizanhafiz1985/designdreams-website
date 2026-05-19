@@ -1,15 +1,15 @@
 [
   {
     "id": "p6",
-    "name": "Twist Hoop Earrings",
+    "name": "Twist Zircon Earrings",
     "category": "Earrings",
-    "price": 1500,
+    "price": 850,
     "price_usd": 5.25,
-    "description": "Modern twisted hoop earrings crafted from polished 925 stainless steel. Lightweight and comfortable for all-day wear. A wardrobe staple.",
-    "short_desc": "Modern twisted hoops in polished steel",
+    "description": "Modern twisted  earrings stainless steel. Lightweight and comfortable for all-day wear. A wardrobe staple.",
+    "short_desc": "gold plated original lifetime daily wear",
     "material": "925 Stainless Steel",
-    "image_url": "https://images.unsplash.com/photo-1630019852942-f89202989a59?w=600&q=80",
-    "badge": "New",
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p6.jpeg",
+    "badge": "Bestseller",
     "in_stock": true,
     "rating": 4.4
   },
