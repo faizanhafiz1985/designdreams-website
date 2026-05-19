@@ -164,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
   // Wrap every panel init in its own try/catch so one failure never blocks the rest
   try { loadHeroSlides();       } catch {}
-  try { loadProductImages();    } catch {}
   try { loadProductsTable();    } catch {}
   try { loadOrdersTable();      } catch {}
   try { loadInquiries();        } catch {}
@@ -185,7 +184,6 @@ function initNavigation() {
     orders:           'Orders',
     inquiries:        'Inquiries',
     'hero-images':    'Hero Images',
-    'product-images': 'Product Images',
     products:         'Products',
     settings:         'Settings',
     'content-manager':'Content Manager',
@@ -207,6 +205,8 @@ function initNavigation() {
     'announcement':    () => { try { loadAnnouncementPanel(); } catch {} },
     'theme':           () => { try { loadThemePanel();        } catch {} },
     'seo':             () => { try { loadSeoPanel();          } catch {} },
+    'orders':          () => { try { loadOrdersTable();       } catch {} },
+    'inquiries':       () => { try { loadInquiries();         } catch {} },
   };
 
   document.querySelectorAll('.admin-nav-item[data-panel]').forEach(item => {
@@ -285,6 +285,50 @@ async function _publishViaGitHubAPI(token, owner, repo, jsonStr, branch = 'main'
     throw new Error(e.message || `Commit failed (${putRes.status})`);
   }
   return putRes.json();
+}
+
+/**
+ * Upload a product image (File object) to the GitHub repo under images/products/.
+ * Returns the raw GitHub URL so visitors on any machine can see the image.
+ */
+async function _uploadImageToGitHub(file, productId, token, owner, repo, branch = 'main') {
+  const ext   = file.name.split('.').pop().toLowerCase() || 'jpg';
+  const path  = `images/products/${productId}.${ext}`;
+  const url   = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Accept':        'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+
+  // Convert file to base64
+  const base64 = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = e => resolve(e.target.result.split(',')[1]); // strip data-URL prefix
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  // Get existing SHA if file already exists
+  let sha;
+  const getRes = await fetch(`${url}?ref=${encodeURIComponent(branch)}`, { headers });
+  if (getRes.ok) { const d = await getRes.json(); sha = d.sha; }
+
+  const body = { message: `Upload product image ${productId}.${ext}`, content: base64, branch };
+  if (sha) body.sha = sha;
+
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!putRes.ok) {
+    const err = await putRes.json().catch(() => ({}));
+    throw new Error(err.message || `Image upload failed (${putRes.status})`);
+  }
+
+  // Return the raw content URL (works on any machine, globally)
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${path}`;
 }
 
 /** Test GitHub connection — called from the Settings panel */
@@ -439,10 +483,19 @@ async function loadDashboard() {
     setText('stat-products', Array.isArray(products) ? products.length : 0);
   } catch {}
 
-  // Orders & inquiries are delivered to your email via Web3Forms — no dashboard counts.
-  setText('stat-orders',    '—');
-  setText('stat-paid',      '—');
-  setText('stat-inquiries', '—');
+  // Orders from localStorage (saved by checkout.js on each order)
+  try {
+    const orders  = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+    const paid    = orders.filter(o => o.payment_status && o.payment_status.toLowerCase() !== 'pending').length;
+    setText('stat-orders',    orders.length);
+    setText('stat-paid',      paid);
+  } catch { setText('stat-orders', 0); setText('stat-paid', 0); }
+
+  // Inquiries from localStorage
+  try {
+    const inqs = JSON.parse(localStorage.getItem('dd_inquiries') || '[]');
+    setText('stat-inquiries', inqs.length);
+  } catch { setText('stat-inquiries', 0); }
 
   // ── Publish to Website card ───────────────────────────────
   const publishSlot = document.getElementById('dash-publish-slot');
@@ -487,32 +540,34 @@ async function loadDashboard() {
       </div>`;
   }
 
-  // Orders/inquiries are emailed via Web3Forms — show inline notice instead of a table.
+  // Recent orders from localStorage
   const ordersEl = document.getElementById('dash-recent-orders');
   if (ordersEl) {
-    ordersEl.innerHTML = `
-      <div class="empty-state" style="padding:20px;text-align:center;">
-        <i class="fas fa-store" style="font-size:2rem;color:var(--gold);margin-bottom:8px;"></i>
-        <p style="font-weight:600;margin-bottom:4px;">Orders are emailed to you instantly via Web3Forms.</p>
-        <p style="font-size:0.82rem;color:var(--gray);margin-bottom:12px;">
-          Every order is delivered straight to your inbox — check your email for full details.
-        </p>
-        <a href="https://web3forms.com/dashboard" target="_blank" rel="noopener noreferrer"
-           class="btn btn-gold btn-sm">Open Web3Forms Dashboard →</a>
+    const recentOrders = JSON.parse(localStorage.getItem('dd_orders') || '[]').slice(0, 5);
+    if (recentOrders.length) {
+      renderDashboardOrders(recentOrders);
+    } else {
+      ordersEl.innerHTML = `<div class="empty-state" style="padding:20px;text-align:center;">
+        <i class="fas fa-receipt" style="font-size:2rem;color:var(--gold);margin-bottom:8px;"></i>
+        <p style="font-weight:600;">No orders yet</p>
+        <p style="font-size:0.82rem;color:var(--gray);">Orders placed on the site appear here automatically.</p>
       </div>`;
+    }
   }
+
+  // Recent inquiries from localStorage
   const inqEl = document.getElementById('dash-recent-inq');
   if (inqEl) {
-    inqEl.innerHTML = `
-      <div class="empty-state" style="padding:20px;text-align:center;">
+    const recentInq = JSON.parse(localStorage.getItem('dd_inquiries') || '[]').slice(0, 5);
+    if (recentInq.length) {
+      renderDashboardInquiries(recentInq);
+    } else {
+      inqEl.innerHTML = `<div class="empty-state" style="padding:20px;text-align:center;">
         <i class="fas fa-envelope" style="font-size:2rem;color:var(--gold);margin-bottom:8px;"></i>
-        <p style="font-weight:600;margin-bottom:4px;">Inquiries are emailed to you instantly via Web3Forms.</p>
-        <p style="font-size:0.82rem;color:var(--gray);margin-bottom:12px;">
-          Every customer inquiry is delivered straight to your inbox.
-        </p>
-        <a href="https://web3forms.com/dashboard" target="_blank" rel="noopener noreferrer"
-           class="btn btn-gold btn-sm">Open Web3Forms Dashboard →</a>
+        <p style="font-weight:600;">No inquiries yet</p>
+        <p style="font-size:0.82rem;color:var(--gray);">Customer contact-form submissions appear here.</p>
       </div>`;
+    }
   }
 }
 
@@ -1028,10 +1083,25 @@ async function loadProductsTable() {
   tbody.addEventListener('click', tbody._ddClickHandler);
 }
 
+// Holds the uploaded File object waiting for saveProduct() to push to GitHub
+let _pmUploadedFile = null;
+
 async function openEditProduct(id) {
   const modal = document.getElementById('product-modal');
   const title = document.getElementById('product-modal-title');
   document.getElementById('pm-error')?.classList.add('hidden');
+  _pmUploadedFile = null;
+
+  // Reset upload UI
+  const dropzone = document.getElementById('pm-dropzone');
+  const fileName = document.getElementById('pm-file-name');
+  if (dropzone) { dropzone.style.borderColor = ''; dropzone.style.background = ''; }
+  if (fileName) fileName.textContent = '';
+  const fileInput = document.getElementById('pm-file-input');
+  if (fileInput) fileInput.value = '';
+
+  // Default to URL tab
+  _pmSwitchImageTab('url');
 
   if (id) {
     title.textContent = 'Edit Product';
@@ -1045,28 +1115,78 @@ async function openEditProduct(id) {
       set('pm-image', p.image_url); set('pm-short-desc', p.short_desc);
       set('pm-description', p.description); set('pm-material', p.material);
       set('pm-badge', p.badge || ''); set('pm-rating', p.rating || 0);
+      // Stock toggle
+      const stockToggle = document.getElementById('pm-in-stock');
+      if (stockToggle) stockToggle.checked = (p.in_stock !== false);
+      // Image preview
       const prev = document.getElementById('pm-img-preview');
-      if (prev && p.image_url) { prev.src = p.image_url; prev.style.display = 'block'; }
+      if (prev && p.image_url && !p.image_url.startsWith('data:')) {
+        prev.src = p.image_url; prev.style.display = 'block';
+      } else if (prev) { prev.style.display = 'none'; }
     } catch { showToast('Failed to load product', 'error'); return; }
   } else {
     title.textContent = 'Add New Product';
     ['pm-id','pm-name','pm-price','pm-price-usd','pm-image','pm-short-desc','pm-description','pm-material','pm-rating']
       .forEach(fid => { const el = document.getElementById(fid); if (el) el.value = ''; });
     document.getElementById('pm-badge').value = '';
+    const stockToggle = document.getElementById('pm-in-stock');
+    if (stockToggle) stockToggle.checked = true;
     const prev = document.getElementById('pm-img-preview');
     if (prev) prev.style.display = 'none';
   }
 
-  // Image preview on URL change
+  // Image URL live preview
   const imgInput = document.getElementById('pm-image');
   if (imgInput) {
     imgInput.oninput = function () {
+      _pmUploadedFile = null; // URL takes precedence over any uploaded file
       const prev = document.getElementById('pm-img-preview');
       if (prev) { prev.src = this.value; prev.style.display = this.value ? 'block' : 'none'; }
     };
   }
 
+  // Upload zone
+  if (dropzone) {
+    dropzone.onclick = () => fileInput?.click();
+    dropzone.ondragover = (e) => { e.preventDefault(); dropzone.classList.add('drag-over'); };
+    dropzone.ondragleave = () => dropzone.classList.remove('drag-over');
+    dropzone.ondrop = (e) => {
+      e.preventDefault(); dropzone.classList.remove('drag-over');
+      const f = e.dataTransfer?.files[0];
+      if (f?.type.startsWith('image/')) _pmHandleFile(f);
+    };
+  }
+  if (fileInput) {
+    fileInput.onchange = () => { if (fileInput.files[0]) _pmHandleFile(fileInput.files[0]); };
+  }
+
   modal?.classList.add('open');
+}
+
+function _pmSwitchImageTab(tab) {
+  ['url','upload'].forEach(t => {
+    document.getElementById(`pm-tab-${t}`)?.classList.toggle('active', t === tab);
+    document.getElementById(`pm-sec-${t}`)?.classList.toggle('active', t === tab);
+  });
+}
+window._pmSwitchImageTab = _pmSwitchImageTab;
+
+function _pmHandleFile(file) {
+  _pmUploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    // Show preview immediately (base64)
+    const prev = document.getElementById('pm-img-preview');
+    if (prev) { prev.src = dataUrl; prev.style.display = 'block'; }
+    const urlInput = document.getElementById('pm-image');
+    if (urlInput) urlInput.value = ''; // clear URL field — upload takes over
+    const dz = document.getElementById('pm-dropzone');
+    if (dz) { dz.style.borderColor = 'var(--gold)'; dz.style.background = 'rgba(200,169,110,0.06)'; }
+    const fn = document.getElementById('pm-file-name');
+    if (fn) fn.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB) ready`;
+  };
+  reader.readAsDataURL(file);
 }
 window.openEditProduct = openEditProduct;
 
@@ -1078,8 +1198,10 @@ window.closeProductModal = closeProductModal;
 async function saveProduct() {
   const id    = document.getElementById('pm-id')?.value.trim();
   const errEl = document.getElementById('pm-error');
+  const productId = id || ('p' + Date.now());
+
   const body  = {
-    id:          id || ('p' + Date.now()),
+    id:          productId,
     name:        sanitizeInput(document.getElementById('pm-name')?.value || ''),
     category:    document.getElementById('pm-category')?.value,
     price:       parseFloat(document.getElementById('pm-price')?.value)     || 0,
@@ -1090,34 +1212,80 @@ async function saveProduct() {
     material:    sanitizeInput(document.getElementById('pm-material')?.value     || ''),
     badge:       document.getElementById('pm-badge')?.value || '',
     rating:      parseFloat(document.getElementById('pm-rating')?.value) || 0,
-    in_stock:    true,
+    in_stock:    document.getElementById('pm-in-stock')?.checked !== false,
   };
-  if (!body.name || !body.price || !body.image_url) {
-    if (errEl) { errEl.textContent = 'Name, Price, and Image URL are required.'; errEl.classList.remove('hidden'); }
+
+  // Validate: need name + price + (url OR uploaded file)
+  const hasUpload = !!_pmUploadedFile;
+  if (!body.name || !body.price || (!body.image_url && !hasUpload)) {
+    if (errEl) { errEl.textContent = 'Name, Price, and an image (URL or Upload) are required.'; errEl.classList.remove('hidden'); }
     return;
   }
+
   const btn = document.getElementById('pm-save-btn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  if (errEl) errEl.classList.add('hidden');
+
   try {
+    // ── If a file was uploaded, try GitHub upload first ──────
+    if (hasUpload) {
+      const saved   = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+      const ghToken = saved.gh_token  || '';
+      const ghOwner = saved.gh_owner  || '';
+      const ghRepo  = saved.gh_repo   || '';
+      const ghBranch= saved.gh_branch || 'main';
+
+      if (ghToken && ghOwner && ghRepo) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading image to GitHub…';
+        try {
+          const rawUrl = await _uploadImageToGitHub(_pmUploadedFile, productId, ghToken, ghOwner, ghRepo, ghBranch);
+          body.image_url = rawUrl;
+          showToast('Image uploaded to GitHub ✓', 'success');
+        } catch (imgErr) {
+          // Fallback: store base64 locally (cross-machine issue explained to user)
+          const reader = new FileReader();
+          const dataUrl = await new Promise((resolve) => {
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(_pmUploadedFile);
+          });
+          body.image_url = dataUrl;
+          showToast('GitHub image upload failed — stored locally only. Set up GitHub in Settings to enable cross-machine images.', 'error');
+        }
+      } else {
+        // No GitHub: store base64 locally
+        const reader = new FileReader();
+        const dataUrl = await new Promise((resolve) => {
+          reader.onload = e => resolve(e.target.result);
+          reader.readAsDataURL(_pmUploadedFile);
+        });
+        body.image_url = dataUrl;
+        showToast('Image stored locally only. Add GitHub credentials in Settings to upload images to the server.', '');
+      }
+      _pmUploadedFile = null;
+    }
+
     const products = await getAllProductsAdmin();
     const idx = products.findIndex(p => p.id === body.id);
     if (idx !== -1) {
-      // Keep in_stock status when editing
-      body.in_stock = products[idx].in_stock;
-      products[idx] = body;
+      products[idx] = { ...products[idx], ...body };
     } else {
       products.push(body);
     }
     saveProductsToStorage(products);
+    // Also keep image override in sync
+    if (body.image_url) {
+      const overrides = JSON.parse(localStorage.getItem('dd_product_images_override') || '{}');
+      overrides[body.id] = body.image_url;
+      localStorage.setItem('dd_product_images_override', JSON.stringify(overrides));
+    }
     localStorage.setItem('dd_products_dirty', '1');
     updatePublishBadge();
-    showToast('Product saved locally ✓  — click "Publish to Website" in Dashboard to make it live for all visitors.', 'success');
+    showToast('Product saved ✓ — click "Publish to Website" to make it live for all visitors.', 'success');
     closeProductModal();
     loadProductsTable();
-    loadProductImages();
-  } catch {
-    if (errEl) { errEl.textContent = 'Failed to save. Please try again.'; errEl.classList.remove('hidden'); }
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Failed to save: ' + (e.message || 'Unknown error'); errEl.classList.remove('hidden'); }
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-save"></i> Save Product';
@@ -1135,74 +1303,242 @@ async function deleteProduct(id, name) {
     updatePublishBadge();
     showToast(`"${name}" deleted locally ✓  — publish to make it live for all visitors.`, 'success');
     loadProductsTable();
-    loadProductImages();
   } catch {
     showToast('Failed to delete product.', 'error');
   }
 }
 window.deleteProduct = deleteProduct;
 
-// ── Orders ────────────────────────────────────────────────
-// Orders are delivered straight to your email via Web3Forms — no backend needed.
+// ── Orders ─────────────────────────────────────────────────
 function loadOrdersTable() {
-  const panel = document.getElementById('panel-orders');
-  if (!panel) return;
+  const tbody = document.getElementById('orders-tbody');
+  if (!tbody) return;
 
-  setText('orders-count', 'Email');
+  const orders = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+  setText('orders-count', `${orders.length} order${orders.length !== 1 ? 's' : ''}`);
 
-  const notice = document.createElement('div');
-  notice.style.cssText = 'text-align:center;padding:40px 20px;';
-  notice.innerHTML = `
-    <div style="max-width:480px;margin:0 auto;background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:32px;">
-      <i class="fas fa-store" style="font-size:2.5rem;color:var(--gold);display:block;margin-bottom:16px;"></i>
-      <h3 style="margin-bottom:8px;">Orders are emailed to you</h3>
-      <p style="font-size:0.875rem;color:var(--gray);line-height:1.7;margin-bottom:20px;">
-        When a customer places an order, the details are submitted via <strong>Web3Forms</strong>
-        and emailed instantly to <strong>designdreamsbysyeda@gmail.com</strong>.<br><br>
-        You also receive a WhatsApp notification (the chat window opens after each order).
-      </p>
-      <a href="https://web3forms.com/dashboard" target="_blank" rel="noopener noreferrer"
-         class="btn btn-gold" style="display:inline-flex;align-items:center;gap:8px;">
-        <i class="fas fa-external-link-alt"></i> Open Web3Forms Dashboard
-      </a>
-      <p style="margin-top:12px;font-size:0.78rem;color:var(--gray);">
-        Free plan: 250 submissions/month. Upgrade anytime at web3forms.com.
-      </p>
+  if (!orders.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty-state" style="padding:40px;">
+      <i class="fas fa-receipt" style="font-size:2rem;color:var(--border);display:block;margin-bottom:12px;"></i>
+      No orders yet — they'll appear here when customers place orders.
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  orders.forEach(o => {
+    const statusColor = { Pending:'pending', Confirmed:'paid', Shipped:'shipped', Delivered:'delivered', Cancelled:'cancelled' };
+    const payStatusColor = { Pending:'pending', Paid:'paid', Refunded:'shipped' };
+    const date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'2-digit' }) : '—';
+    const itemsList = Array.isArray(o.items)
+      ? o.items.map(i => `${i.name} × ${i.qty}`).join(', ')
+      : (o.items || '');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="order-id-cell">#<span></span></td>
+      <td>
+        <strong></strong><br>
+        <small style="color:var(--gray);"></small>
+      </td>
+      <td style="max-width:160px;font-size:0.78rem;color:var(--gray);"></td>
+      <td style="font-weight:600;white-space:nowrap;"></td>
+      <td></td>
+      <td>
+        <select class="order-status-select" data-id="${htmlEscape(o.id)}" data-type="order_status"
+          style="border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.75rem;cursor:pointer;">
+          ${['Pending','Confirmed','Shipped','Delivered','Cancelled'].map(s =>
+            `<option value="${s}" ${o.order_status === s ? 'selected' : ''}>${s}</option>`
+          ).join('')}
+        </select>
+      </td>
+      <td style="font-size:0.78rem;color:var(--gray);"></td>
+      <td>
+        <button class="btn btn-sm" data-action="view-order" data-id="${htmlEscape(o.id)}"
+          style="font-size:0.72rem;border:1px solid var(--gold);color:var(--gold-dark);margin-bottom:4px;display:block;width:100%;text-align:center;">
+          <i class="fas fa-eye"></i> View
+        </button>
+        <button class="btn btn-sm" data-action="delete-order" data-id="${htmlEscape(o.id)}"
+          style="font-size:0.72rem;border:1px solid #e74c3c;color:#e74c3c;display:block;width:100%;text-align:center;">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </td>`;
+    tr.querySelector('.order-id-cell span').textContent       = (o.id || '').slice(-8).toUpperCase();
+    tr.querySelectorAll('td')[1].querySelector('strong').textContent = o.customer_name || '—';
+    tr.querySelectorAll('td')[1].querySelector('small').textContent  = o.customer_phone || '';
+    tr.querySelectorAll('td')[2].textContent = itemsList;
+    tr.querySelectorAll('td')[3].textContent = formatPKR(o.total_pkr || 0);
+    const payBadge = document.createElement('span');
+    payBadge.className = `status-badge status-${payStatusColor[o.payment_status] || 'pending'}`;
+    payBadge.textContent = o.payment_method ? `${o.payment_method} — ${o.payment_status || 'Pending'}` : (o.payment_status || 'Pending');
+    tr.querySelectorAll('td')[4].appendChild(payBadge);
+    tr.querySelectorAll('td')[6].textContent = date;
+    tbody.appendChild(tr);
+  });
+
+  // Order status change
+  if (tbody._ddOrderHandler) tbody.removeEventListener('change', tbody._ddOrderHandler);
+  if (tbody._ddOrderClickHandler) tbody.removeEventListener('click', tbody._ddOrderClickHandler);
+
+  tbody._ddOrderHandler = (e) => {
+    const sel = e.target.closest('.order-status-select');
+    if (!sel) return;
+    const id = sel.dataset.id;
+    const orders = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+    const idx = orders.findIndex(o => o.id === id);
+    if (idx !== -1) {
+      orders[idx].order_status = sel.value;
+      localStorage.setItem('dd_orders', JSON.stringify(orders));
+      showToast(`Order status updated to "${sel.value}"`, 'success');
+      loadDashboard();
+    }
+  };
+  tbody._ddOrderClickHandler = (e) => {
+    const viewBtn   = e.target.closest('[data-action="view-order"]');
+    const deleteBtn = e.target.closest('[data-action="delete-order"]');
+    if (viewBtn) {
+      const id = viewBtn.dataset.id;
+      const o  = JSON.parse(localStorage.getItem('dd_orders') || '[]').find(x => x.id === id);
+      if (o) showOrderDetailModal(o);
+    }
+    if (deleteBtn) {
+      if (!confirm('Delete this order from local records? This cannot be undone.')) return;
+      const updated = JSON.parse(localStorage.getItem('dd_orders') || '[]').filter(x => x.id !== deleteBtn.dataset.id);
+      localStorage.setItem('dd_orders', JSON.stringify(updated));
+      loadOrdersTable();
+      loadDashboard();
+      showToast('Order deleted.', 'success');
+    }
+  };
+  tbody.addEventListener('change', tbody._ddOrderHandler);
+  tbody.addEventListener('click', tbody._ddOrderClickHandler);
+}
+
+function showOrderDetailModal(o) {
+  const items = Array.isArray(o.items)
+    ? o.items.map(i => `<li>${htmlEscape(i.name)} × ${i.qty} — ${formatPKR(i.price * i.qty)}</li>`).join('')
+    : `<li>${htmlEscape(String(o.items || ''))}</li>`;
+  const date = o.created_at ? new Date(o.created_at).toLocaleString('en-PK') : '—';
+  const html = `
+    <div style="position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;padding:16px;" id="order-detail-overlay">
+      <div style="background:var(--white);border-radius:var(--radius-md);padding:32px;max-width:540px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.4);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h3 style="font-family:var(--font-serif);font-size:1.2rem;">Order #${htmlEscape((o.id || '').slice(-8).toUpperCase())}</h3>
+          <button onclick="document.getElementById('order-detail-overlay').remove()"
+            style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray);">✕</button>
+        </div>
+        <dl style="display:grid;grid-template-columns:1fr 1fr;gap:12px 24px;font-size:0.875rem;">
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Customer</dt><dd style="font-weight:600;"></dd></div>
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Phone</dt><dd></dd></div>
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Email</dt><dd style="word-break:break-all;"></dd></div>
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Date</dt><dd>${htmlEscape(date)}</dd></div>
+          <div style="grid-column:1/-1;"><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Shipping Address</dt><dd></dd></div>
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Payment Method</dt><dd></dd></div>
+          <div><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Total</dt><dd style="font-weight:700;font-size:1rem;color:var(--gold-dark);"></dd></div>
+          ${o.notes ? `<div style="grid-column:1/-1;"><dt style="color:var(--gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:.5px;">Notes</dt><dd></dd></div>` : ''}
+        </dl>
+        <div style="margin-top:16px;padding:14px;background:var(--gray-light);border-radius:var(--radius);">
+          <strong style="font-size:0.8rem;display:block;margin-bottom:8px;color:var(--gray);">ITEMS ORDERED</strong>
+          <ul style="margin:0;padding-left:18px;font-size:0.875rem;line-height:1.9;">${items}</ul>
+        </div>
+      </div>
     </div>`;
-
-  const tableWrap = panel.querySelector('.table-wrap, table') || panel;
-  tableWrap.replaceWith ? tableWrap.replaceWith(notice) : panel.appendChild(notice);
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  const overlay = div.firstElementChild;
+  const dls = overlay.querySelectorAll('dd');
+  dls[0].textContent = o.customer_name   || '—';
+  dls[1].textContent = o.customer_phone  || '—';
+  dls[2].textContent = o.customer_email  || '—';
+  // dls[3] = date (already set in html)
+  dls[4].textContent = o.customer_address || '—';
+  dls[5].textContent = o.payment_method  || '—';
+  dls[6].textContent = formatPKR(o.total_pkr || 0);
+  if (o.notes && dls[7]) dls[7].textContent = o.notes;
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
 }
 
 // ── Inquiries ─────────────────────────────────────────────
-// Inquiries are delivered straight to your email via Web3Forms — no backend needed.
 function loadInquiries() {
-  const panel = document.getElementById('panel-inquiries');
-  if (!panel) return;
+  const container = document.getElementById('inquiry-cards');
+  if (!container) return;
 
-  setText('inq-count', 'Email');
+  const inquiries = JSON.parse(localStorage.getItem('dd_inquiries') || '[]');
+  setText('inq-count', `${inquiries.length} inquiry${inquiries.length !== 1 ? 'ies' : 'y'}`);
 
-  const notice = document.createElement('div');
-  notice.style.cssText = 'text-align:center;padding:40px 20px;';
-  notice.innerHTML = `
-    <div style="max-width:480px;margin:0 auto;background:var(--surface);border:1px solid var(--gold);border-radius:12px;padding:32px;">
-      <i class="fas fa-envelope-open-text" style="font-size:2.5rem;color:var(--gold);display:block;margin-bottom:16px;"></i>
-      <h3 style="margin-bottom:8px;">Inquiries are emailed to you</h3>
-      <p style="font-size:0.875rem;color:var(--gray);line-height:1.7;margin-bottom:20px;">
-        When a customer submits the contact form, it is captured by <strong>Web3Forms</strong>
-        and emailed instantly to <strong>designdreamsbysyeda@gmail.com</strong>.
-      </p>
-      <a href="https://web3forms.com/dashboard" target="_blank" rel="noopener noreferrer"
-         class="btn btn-gold" style="display:inline-flex;align-items:center;gap:8px;">
-        <i class="fas fa-external-link-alt"></i> Open Web3Forms Dashboard
-      </a>
-      <p style="margin-top:12px;font-size:0.78rem;color:var(--gray);">
-        Free plan: 250 submissions/month.
-      </p>
+  if (!inquiries.length) {
+    container.innerHTML = `<div class="empty-state">
+      <i class="fas fa-envelope" style="font-size:2.5rem;color:var(--border);display:block;margin-bottom:12px;"></i>
+      <p style="font-weight:600;">No inquiries yet</p>
+      <p style="font-size:0.82rem;color:var(--gray);">Customer contact-form submissions appear here.</p>
     </div>`;
+    return;
+  }
 
-  const container = document.getElementById('inquiry-cards') || panel;
-  container.replaceWith ? container.replaceWith(notice) : panel.appendChild(notice);
+  container.innerHTML = '';
+  inquiries.forEach(inq => {
+    const date = inq.created_at ? new Date(inq.created_at).toLocaleDateString('en-PK', { day:'2-digit', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+    const card = document.createElement('div');
+    card.className = `inquiry-card ${inq.status === 'Replied' ? 'replied' : ''}`;
+    card.dataset.id = inq.id;
+    card.innerHTML = `
+      <div class="inquiry-card-header">
+        <div>
+          <h4></h4>
+          <span style="font-size:0.75rem;color:var(--gray);"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="status-badge status-${inq.status === 'Replied' ? 'paid' : 'pending'}"></span>
+          <button data-action="reply-inq" data-id="${htmlEscape(inq.id)}"
+            style="font-size:0.72rem;padding:4px 10px;border-radius:20px;background:none;
+                   border:1px solid var(--gold);color:var(--gold-dark);cursor:pointer;">
+            <i class="fas fa-reply"></i> Reply
+          </button>
+          <button data-action="delete-inq" data-id="${htmlEscape(inq.id)}"
+            style="font-size:0.72rem;padding:4px 8px;border-radius:20px;background:none;
+                   border:1px solid #e74c3c;color:#e74c3c;cursor:pointer;">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      <p class="meta"></p>
+      <p class="message"></p>`;
+    card.querySelector('h4').textContent           = inq.name || '—';
+    card.querySelector('span').textContent          = date;
+    card.querySelector('.status-badge').textContent = inq.status || 'New';
+    card.querySelector('.meta').textContent         = `${inq.email || ''} · ${inq.phone || ''} · ${inq.subject || ''}`;
+    card.querySelector('.message').textContent      = (inq.message || '').slice(0, 200) + ((inq.message || '').length > 200 ? '…' : '');
+    container.appendChild(card);
+  });
+
+  if (container._ddInqHandler) container.removeEventListener('click', container._ddInqHandler);
+  container._ddInqHandler = (e) => {
+    const replyBtn  = e.target.closest('[data-action="reply-inq"]');
+    const deleteBtn = e.target.closest('[data-action="delete-inq"]');
+    if (replyBtn) {
+      const id  = replyBtn.dataset.id;
+      const inq = JSON.parse(localStorage.getItem('dd_inquiries') || '[]').find(x => x.id === id);
+      if (inq) {
+        window.open(`mailto:${inq.email}?subject=Re: ${encodeURIComponent(inq.subject || 'Your Inquiry')}&body=${encodeURIComponent(`Hi ${inq.name},\n\nThank you for reaching out to DesignDreams!\n\n`)}`, '_blank');
+        // Mark as replied
+        const all = JSON.parse(localStorage.getItem('dd_inquiries') || '[]');
+        const idx = all.findIndex(x => x.id === id);
+        if (idx !== -1) { all[idx].status = 'Replied'; localStorage.setItem('dd_inquiries', JSON.stringify(all)); }
+        loadInquiries();
+        loadDashboard();
+      }
+    }
+    if (deleteBtn) {
+      if (!confirm('Delete this inquiry from local records?')) return;
+      const updated = JSON.parse(localStorage.getItem('dd_inquiries') || '[]').filter(x => x.id !== deleteBtn.dataset.id);
+      localStorage.setItem('dd_inquiries', JSON.stringify(updated));
+      loadInquiries();
+      loadDashboard();
+      showToast('Inquiry deleted.', 'success');
+    }
+  };
+  container.addEventListener('click', container._ddInqHandler);
 }
 
 // ── Settings ──────────────────────────────────────────────

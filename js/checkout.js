@@ -251,6 +251,27 @@ async function placeOrder({ name, email, phone, address, city, province, payment
     clearCart();
     notifyOwnerWhatsApp({ name, phone, cartItems, totalPKR, payMethod, orderNumber });
 
+    // ── Save order to localStorage for admin panel ──────────
+    try {
+      const allOrders = JSON.parse(localStorage.getItem('dd_orders') || '[]');
+      allOrders.unshift({
+        id:               orderNumber,
+        customer_name:    name,
+        customer_email:   email,
+        customer_phone:   phone,
+        customer_address: fullAddress,
+        items:            cartItems,
+        total_pkr:        totalPKR,
+        payment_method:   payMethod,
+        payment_status:   paymentStatus,
+        order_status:     'Pending',
+        notes:            notes || '',
+        created_at:       new Date().toISOString(),
+      });
+      if (allOrders.length > 500) allOrders.length = 500;
+      localStorage.setItem('dd_orders', JSON.stringify(allOrders));
+    } catch { /* storage full – skip */ }
+
   } catch {
     if (errorEl) {
       errorEl.textContent = '❌ Failed to place order. Please try again or contact us on WhatsApp.';

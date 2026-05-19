@@ -300,6 +300,19 @@ async function handleInquirySubmit(e) {
       waLink.appendChild(document.createTextNode(' Also send via WhatsApp for faster response'));
       success.append(p1, p2, waLink);
     }
+    // ── Save inquiry to localStorage for admin panel ────────
+    try {
+      const allInq = JSON.parse(localStorage.getItem('dd_inquiries') || '[]');
+      allInq.unshift({
+        id:         'inq-' + Date.now(),
+        name, email, phone, subject, message,
+        status:     'New',
+        created_at: new Date().toISOString(),
+      });
+      if (allInq.length > 500) allInq.length = 500;
+      localStorage.setItem('dd_inquiries', JSON.stringify(allInq));
+    } catch { /* storage full – skip */ }
+
     form.reset();
   } catch {
     if (error) {
