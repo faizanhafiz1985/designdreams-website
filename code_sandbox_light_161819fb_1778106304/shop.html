@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop – DesignDreams Jewelry</title>
+  <meta name="description" content="Browse DesignDreams' full collection of premium stainless steel and artificial jewelry. Filter by category, price, and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <span><i class="fas fa-shipping-fast"></i> Free shipping on orders above PKR 10,000</span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fab fa-whatsapp"></i> WhatsApp: <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fas fa-envelope"></i> <a href="mailto:info@designdreams.pk">info@designdreams.pk</a></span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="site-header" id="site-header">
+    <nav class="navbar container">
+      <a href="index.html" class="brand-logo brand-logo--img">
+        <img src="images/logo.jpg" alt="DesignDreams" class="header-logo-img" />
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="shop.html" class="nav-link active">Shop</a></li>
+        <li class="has-dropdown">
+          <a href="shop.html" class="nav-link">Collections <i class="fas fa-chevron-down fa-xs"></i></a>
+          <ul class="dropdown">
+            <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+            <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+            <li><a href="shop.html?cat=Rings">Rings</a></li>
+            <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+            <li><a href="shop.html?cat=Sets">Sets</a></li>
+          </ul>
+        </li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn-icon" id="search-toggle" aria-label="Search"><i class="fas fa-search"></i></button>
+        <button class="btn-icon cart-btn" id="cart-toggle" aria-label="Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+        <button class="btn-icon hamburger" id="hamburger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      </div>
+    </nav>
+    <div class="search-bar-wrapper" id="search-bar-wrapper">
+      <div class="container">
+        <input type="text" id="search-input" placeholder="Search jewelry, collections…" autocomplete="off" />
+        <button id="search-close"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SHOP HERO -->
+  <section class="shop-hero">
+    <div class="shop-hero-content">
+      <p class="section-eyebrow">DesignDreams Collection</p>
+      <h1>All Jewelry</h1>
+      <p>Premium stainless steel pieces crafted for the modern woman</p>
+    </div>
+  </section>
+
+  <!-- BREADCRUMB -->
+  <div class="container" style="padding-top:20px; padding-bottom:4px;">
+    <nav class="breadcrumb" id="breadcrumb">
+      <a href="index.html">Home</a>
+      <span class="sep"><i class="fas fa-chevron-right fa-xs"></i></span>
+      <span id="breadcrumb-current">All Jewelry</span>
+    </nav>
+  </div>
+
+  <!-- SHOP LAYOUT -->
+  <div class="container">
+    <div class="shop-layout">
+
+      <!-- SIDEBAR -->
+      <aside class="shop-sidebar">
+        <div class="sidebar-card">
+          <h4>Categories</h4>
+          <div class="filter-list" id="category-filters">
+            <button class="filter-btn active" data-cat="all">
+              All Jewelry <span id="count-all">0</span>
+            </button>
+            <button class="filter-btn" data-cat="Necklaces">
+              Necklaces <span id="count-Necklaces">0</span>
+            </button>
+            <button class="filter-btn" data-cat="Bracelets">
+              Bracelets <span id="count-Bracelets">0</span>
+            </button>
+            <button class="filter-btn" data-cat="Rings">
+              Rings <span id="count-Rings">0</span>
+            </button>
+            <button class="filter-btn" data-cat="Earrings">
+              Earrings <span id="count-Earrings">0</span>
+            </button>
+            <button class="filter-btn" data-cat="Sets">
+              Sets <span id="count-Sets">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Price Range (PKR)</h4>
+          <div class="price-range">
+            <input type="range" id="price-max" min="1000" max="15000" step="500" value="15000" />
+            <div class="price-range-labels">
+              <span>PKR 1,000</span>
+              <span id="price-max-label">PKR 15,000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Filter By</h4>
+          <div class="filter-list">
+            <button class="filter-btn" data-badge="Bestseller" id="filter-bestseller">⭐ Bestseller</button>
+            <button class="filter-btn" data-badge="New" id="filter-new">✨ New Arrivals</button>
+            <button class="filter-btn" data-badge="Sale" id="filter-sale">🏷 On Sale</button>
+          </div>
+        </div>
+
+        <!-- WhatsApp inquiry in sidebar -->
+        <div class="sidebar-card" style="background: linear-gradient(135deg, #1a3a2e, #2d5a3e); color: white; text-align: center;">
+          <i class="fab fa-whatsapp" style="font-size:2.5rem; color:#25D366; display:block; margin-bottom:12px;"></i>
+          <h4 style="color:white; border-color:rgba(255,255,255,0.2);">Need Help?</h4>
+          <p style="font-size:0.85rem; color:rgba(255,255,255,0.8); margin-bottom:16px;">Chat with us for custom orders or product questions</p>
+          <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%20need%20help%20with%20a%20product" target="_blank" class="btn btn-gold btn-sm btn-full">
+            <i class="fab fa-whatsapp"></i> Chat Now
+          </a>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="shop-main">
+        <div class="shop-toolbar">
+          <p class="shop-toolbar-count" id="toolbar-count">Showing <strong>0</strong> products</p>
+          <div class="shop-toolbar-sort">
+            <select id="sort-select">
+              <option value="default">Default Sorting</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name: A–Z</option>
+              <option value="rating-desc">Top Rated</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="products-grid cols-3" id="shop-products-grid">
+          <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading products…</div>
+        </div>
+
+        <div id="no-products" class="hidden" style="text-align:center; padding:64px; color:var(--gray);">
+          <i class="fas fa-search" style="font-size:3rem; color:var(--border); display:block; margin-bottom:16px;"></i>
+          <p style="font-size:1.1rem;">No products found matching your filters.</p>
+          <button class="btn btn-outline-gold mt-16" id="clear-filters">Clear All Filters</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="brand-logo footer-logo brand-logo--img">
+          <img src="images/logo.jpg" alt="DesignDreams" class="footer-logo-img" />
+        </div>
+        <p>Premium stainless steel and artificial jewelry crafted for the modern woman.</p>
+        <div class="social-links mt-16">
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+          <a href="https://wa.me/923330492914" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="shop.html">All Jewelry</a></li>
+          <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+          <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+          <li><a href="shop.html?cat=Rings">Rings</a></li>
+          <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+          <li><a href="shop.html?cat=Sets">Sets</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <ul>
+          <li><a href="index.html#contact">Contact Us</a></li>
+          <li><a href="#">Shipping Policy</a></li>
+          <li><a href="#">Return Policy</a></li>
+          <li><a href="#">Size Guide</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul class="contact-list">
+          <li><i class="fas fa-envelope"></i> <a href="mailto:info@designdreams.pk">info@designdreams.pk</a></li>
+          <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></li>
+          <li><i class="fas fa-map-marker-alt"></i> North Nazimabad Block L, Karachi, Pakistan</li>
+        </ul>
+        <div class="payment-logos">
+          <span class="pay-logo paypal"><i class="fab fa-paypal"></i> PayPal</span>
+          <span class="pay-logo ep">EasyPaisa</span>
+          <span class="pay-logo jc">JazzCash</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 DesignDreams. All rights reserved. | Crafted with <i class="fas fa-heart"></i> in Pakistan</p>
+    </div>
+  </footer>
+
+  <!-- CART DRAWER -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Shopping Cart">
+    <div class="cart-header">
+      <h3><i class="fas fa-shopping-bag"></i> Your Cart (<span id="cart-count">0</span>)</h3>
+      <button class="btn-icon" id="cart-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-body" id="cart-body">
+      <div class="cart-empty" id="cart-empty">
+        <i class="fas fa-shopping-bag"></i>
+        <p>Your cart is empty</p>
+        <a href="shop.html" class="btn btn-gold btn-sm">Start Shopping</a>
+      </div>
+      <ul class="cart-items" id="cart-items"></ul>
+    </div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-total">
+        <span>Subtotal</span>
+        <strong id="cart-total-pkr">PKR 0</strong>
+      </div>
+      <a href="checkout.html" class="btn btn-gold btn-full">Proceed to Checkout</a>
+      <a href="shop.html" class="btn btn-ghost btn-full mt-8" style="color:var(--dark); border-color:var(--border);">Continue Shopping</a>
+    </div>
+  </aside>
+
+  <!-- WHATSAPP FLOAT -->
+  <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%27m%20interested%20in%20your%20jewelry!" 
+     class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+    <span class="whatsapp-tooltip">Chat with us!</span>
+  </a>
+
+  <div id="toast-container"></div>
+
+  <script src="js/content.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/shop.js"></script>
+</body>
+</html>

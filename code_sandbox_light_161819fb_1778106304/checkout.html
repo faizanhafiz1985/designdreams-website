@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout – DesignDreams</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <span><i class="fas fa-lock"></i> Secure Checkout – SSL Encrypted</span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fab fa-whatsapp"></i> Help? <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="site-header" id="site-header">
+    <nav class="navbar container">
+      <a href="index.html" class="brand-logo brand-logo--img">
+        <img src="images/logo.jpg" alt="DesignDreams" class="header-logo-img" />
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="shop.html" class="nav-link">Shop</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn-icon cart-btn" id="cart-toggle" aria-label="Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+        <button class="btn-icon hamburger" id="hamburger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- CHECKOUT HERO -->
+  <section class="shop-hero" style="height:180px;">
+    <div class="shop-hero-content">
+      <p class="section-eyebrow">Almost There</p>
+      <h1>Secure Checkout</h1>
+    </div>
+  </section>
+
+  <div class="container">
+    <!-- BREADCRUMB -->
+    <nav class="breadcrumb" style="padding-top:20px;">
+      <a href="index.html">Home</a>
+      <span class="sep"><i class="fas fa-chevron-right fa-xs"></i></span>
+      <a href="shop.html">Shop</a>
+      <span class="sep"><i class="fas fa-chevron-right fa-xs"></i></span>
+      <span>Checkout</span>
+    </nav>
+
+    <!-- CHECKOUT LAYOUT -->
+    <div class="checkout-layout" id="checkout-layout">
+
+      <!-- LEFT: FORM -->
+      <div id="checkout-form-area">
+
+        <!-- STEP 1: CONTACT -->
+        <section class="checkout-form-section" style="margin-bottom:24px;">
+          <h2 class="checkout-section-title">
+            <span class="step-num">1</span>
+            <i class="fas fa-user"></i> Contact Information
+          </h2>
+          <div class="contact-form" id="checkout-form" style="gap:16px;">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="co-name">Full Name *</label>
+                <input type="text" id="co-name" placeholder="Sara Ahmed" required />
+              </div>
+              <div class="form-group">
+                <label for="co-email">Email Address *</label>
+                <input type="email" id="co-email" placeholder="sara@example.com" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="co-phone">Phone / WhatsApp *</label>
+              <input type="tel" id="co-phone" placeholder="+92 300 0000000" required />
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 2: SHIPPING -->
+        <section class="checkout-form-section" style="margin-bottom:24px;">
+          <h2 class="checkout-section-title">
+            <span class="step-num">2</span>
+            <i class="fas fa-shipping-fast"></i> Shipping Address
+          </h2>
+          <div class="contact-form" style="gap:16px;">
+            <div class="form-group">
+              <label for="co-address">Street Address *</label>
+              <input type="text" id="co-address" placeholder="House #, Street, Area" required />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="co-city">City *</label>
+                <input type="text" id="co-city" placeholder="Lahore" required />
+              </div>
+              <div class="form-group">
+                <label for="co-province">Province *</label>
+                <select id="co-province" required>
+                  <option value="">Select Province</option>
+                  <option>Punjab</option>
+                  <option>Sindh</option>
+                  <option>KPK</option>
+                  <option>Balochistan</option>
+                  <option>AJK</option>
+                  <option>Gilgit-Baltistan</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="co-notes">Order Notes (Optional)</label>
+              <textarea id="co-notes" rows="2" placeholder="Any special instructions for your order…"></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- STEP 3: PAYMENT -->
+        <section class="checkout-form-section">
+          <h2 class="checkout-section-title">
+            <span class="step-num">3</span>
+            <i class="fas fa-credit-card"></i> Payment Method
+          </h2>
+
+          <div class="payment-methods" id="payment-methods">
+
+            <!-- PayPal -->
+            <label class="payment-method-option" id="opt-paypal">
+              <input type="radio" name="payment" value="paypal" />
+              <span class="payment-method-icon pp"><i class="fab fa-paypal"></i></span>
+              <div class="payment-method-info">
+                <strong>PayPal</strong>
+                <small>Pay securely using your PayPal account (International)</small>
+              </div>
+              <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" 
+                   alt="PayPal" style="height:32px; margin-left:auto; border-radius:4px;" 
+                   onerror="this.style.display='none'" />
+            </label>
+
+            <!-- EasyPaisa -->
+            <label class="payment-method-option" id="opt-easypaisa">
+              <input type="radio" name="payment" value="easypaisa" />
+              <span class="payment-method-icon ep"><i class="fas fa-mobile-alt"></i></span>
+              <div class="payment-method-info">
+                <strong>EasyPaisa</strong>
+                <small>Pay via EasyPaisa mobile account or app</small>
+              </div>
+              <span style="margin-left:auto; background:#6CC04A; color:white; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-weight:700;">EP</span>
+            </label>
+
+            <!-- JazzCash -->
+            <label class="payment-method-option" id="opt-jazzcash">
+              <input type="radio" name="payment" value="jazzcash" />
+              <span class="payment-method-icon jc"><i class="fas fa-wallet"></i></span>
+              <div class="payment-method-info">
+                <strong>JazzCash</strong>
+                <small>Pay via JazzCash mobile account</small>
+              </div>
+              <span style="margin-left:auto; background:#cc0000; color:white; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-weight:700;">JC</span>
+            </label>
+
+            <!-- Bank Transfer -->
+            <label class="payment-method-option" id="opt-bank">
+              <input type="radio" name="payment" value="bank" />
+              <span class="payment-method-icon" style="color:#006a4e;"><i class="fas fa-university"></i></span>
+              <div class="payment-method-info">
+                <strong>Bank Transfer – Meezan Bank</strong>
+                <small>Direct bank transfer via IBAN</small>
+              </div>
+              <span style="margin-left:auto; background:#006a4e; color:white; padding:4px 10px; border-radius:4px; font-size:0.75rem; font-weight:700;">MB</span>
+            </label>
+
+            <!-- COD -->
+            <label class="payment-method-option" id="opt-cod">
+              <input type="radio" name="payment" value="cod" />
+              <span class="payment-method-icon cod"><i class="fas fa-hand-holding-usd"></i></span>
+              <div class="payment-method-info">
+                <strong>Cash on Delivery</strong>
+                <small>Pay when your order arrives (PKR 500 COD fee)</small>
+              </div>
+            </label>
+          </div>
+
+          <!-- Payment Detail Panels -->
+          <div class="payment-details-panel" id="panel-paypal">
+            <p><i class="fab fa-paypal" style="color:#003087;"></i> <strong>PayPal Checkout</strong></p>
+            <p>You will be redirected to PayPal's secure checkout to complete your payment. Accepted cards: Visa, Mastercard, Amex via PayPal.</p>
+            <p style="margin-top:8px; font-size:0.78rem; color:var(--gray);">
+              <i class="fas fa-info-circle"></i> 
+              <strong>Note:</strong> PayPal direct payments may have restrictions in Pakistan. International customers are welcome. For Pakistani customers, we recommend EasyPaisa or JazzCash.
+            </p>
+            <div id="paypal-button-container" style="margin-top:16px; min-height:50px;">
+              <div style="background:var(--border); border-radius:4px; padding:12px; text-align:center; font-size:0.85rem; color:var(--gray);">
+                <i class="fas fa-spinner fa-spin"></i> Loading PayPal button…<br/>
+                <small>(Configure your PayPal Client ID in js/config.js)</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="payment-details-panel" id="panel-easypaisa">
+            <p><strong style="color:#4CAF50;">💚 EasyPaisa Payment Instructions:</strong></p>
+            <ol style="margin-top:10px; padding-left:18px; line-height:2.2; font-size:0.875rem;">
+              <li>Open your <strong>EasyPaisa App</strong></li>
+              <li>Select <strong>"Send Money"</strong> or <strong>"Mobile Account"</strong></li>
+              <li>Enter account number: <strong id="ep-number">03113229889</strong></li>
+              <li>Enter the amount: <strong id="ep-amount">PKR 0</strong></li>
+              <li>Use reference: <strong>DesignDreams Order</strong></li>
+              <li>Send us the transaction ID on WhatsApp: <a href="https://wa.me/923330492914" target="_blank" style="color:#25D366;">+92 333 0492914</a></li>
+            </ol>
+            <div style="background:rgba(108,192,74,0.1); border:1px solid rgba(108,192,74,0.3); border-radius:4px; padding:10px; margin-top:12px; font-size:0.8rem; color:#2d5a1b;">
+              <i class="fas fa-check-circle" style="color:#6CC04A;"></i> Your order will be processed within 1 hour of payment confirmation.
+            </div>
+          </div>
+
+          <div class="payment-details-panel" id="panel-jazzcash">
+            <p><strong style="color:#cc0000;">❤️ JazzCash Payment Instructions:</strong></p>
+            <ol style="margin-top:10px; padding-left:18px; line-height:2.2; font-size:0.875rem;">
+              <li>Open your <strong>JazzCash App</strong></li>
+              <li>Select <strong>"Send Money"</strong></li>
+              <li>Enter account number: <strong id="jc-number">03330492914</strong></li>
+              <li>Enter the amount: <strong id="jc-amount">PKR 0</strong></li>
+              <li>Use reference: <strong>DesignDreams Order</strong></li>
+              <li>Share transaction ID on WhatsApp: <a href="https://wa.me/923330492914" target="_blank" style="color:#25D366;">+92 333 0492914</a></li>
+            </ol>
+            <div style="background:rgba(204,0,0,0.07); border:1px solid rgba(204,0,0,0.2); border-radius:4px; padding:10px; margin-top:12px; font-size:0.8rem; color:#8b0000;">
+              <i class="fas fa-check-circle" style="color:#cc0000;"></i> Your order will be processed within 1 hour of payment confirmation.
+            </div>
+          </div>
+
+          <div class="payment-details-panel" id="panel-bank">
+            <p><i class="fas fa-university" style="color:var(--gold);"></i> <strong>Bank Transfer – Meezan Bank</strong></p>
+            <ol style="margin-top:10px; padding-left:18px; line-height:2.2; font-size:0.875rem;">
+              <li>Open your <strong>banking app</strong> or visit any <strong>Meezan Bank</strong> branch</li>
+              <li>Transfer to: <strong>Bank Name: Meezan Bank</strong></li>
+              <li>IBAN: <strong id="bank-iban">PK00MEZN0000000000000000</strong> <span style="font-size:0.75rem; color:var(--gray);">(update in config)</span></li>
+              <li>Amount: <strong id="bank-amount">PKR 0</strong></li>
+              <li>Use your <strong>name &amp; phone</strong> as reference</li>
+              <li>Share transfer receipt on WhatsApp: <a href="https://wa.me/923330492914" target="_blank" style="color:#25D366;">+92 333 0492914</a></li>
+            </ol>
+            <div style="background:rgba(200,169,110,0.1); border:1px solid rgba(200,169,110,0.3); border-radius:4px; padding:10px; margin-top:12px; font-size:0.8rem; color:#7a5c1e;">
+              <i class="fas fa-check-circle" style="color:var(--gold);"></i> Your order will be processed within 2 hours of payment confirmation.
+            </div>
+          </div>
+
+          <div class="payment-details-panel" id="panel-cod">
+            <p><i class="fas fa-truck" style="color:var(--gold);"></i> <strong>Cash on Delivery</strong></p>
+            <p style="margin-top:8px;">Pay in cash when your order arrives. A PKR 500 COD service fee will be added to your order total.</p>
+            <ul style="margin-top:10px; padding-left:18px; font-size:0.875rem; line-height:2;">
+              <li>Available across Pakistan</li>
+              <li>Delivery in 3-5 business days</li>
+              <li>Please have exact change ready</li>
+            </ul>
+          </div>
+
+          <!-- PLACE ORDER BUTTON -->
+          <div style="margin-top:24px;">
+            <div id="checkout-error" class="alert alert-error hidden"></div>
+            <button class="btn btn-gold btn-full" id="place-order-btn" style="font-size:1rem; padding:18px;">
+              <i class="fas fa-lock"></i> Place Order Securely
+            </button>
+            <p style="text-align:center; font-size:0.8rem; color:var(--gray); margin-top:12px;">
+              <i class="fas fa-shield-alt"></i> Your information is encrypted and secure.
+              By placing an order you agree to our <a href="#">Terms & Conditions</a>.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: ORDER SUMMARY -->
+      <div class="order-summary" id="order-summary">
+        <h3><i class="fas fa-receipt" style="color:var(--gold); margin-right:8px;"></i>Order Summary</h3>
+        <div class="order-items" id="order-items">
+          <!-- JS-rendered -->
+        </div>
+        <div class="order-totals">
+          <div class="order-total-row">
+            <span>Subtotal</span>
+            <span id="summary-subtotal">PKR 0</span>
+          </div>
+          <div class="order-total-row">
+            <span>Shipping</span>
+            <span id="summary-shipping">Free</span>
+          </div>
+          <div class="order-total-row" id="cod-fee-row" style="display:none">
+            <span>COD Fee</span>
+            <span>PKR 500</span>
+          </div>
+          <div class="order-total-row grand">
+            <span>Total</span>
+            <span id="summary-total">PKR 0</span>
+          </div>
+
+        </div>
+
+        <div style="margin-top:20px; padding:16px; background:rgba(200,169,110,0.08); border-radius:var(--radius); border: 1px solid rgba(200,169,110,0.2);">
+          <p style="font-size:0.8rem; color:var(--gray); text-align:center; line-height:1.8;">
+            <i class="fas fa-shipping-fast" style="color:var(--gold);"></i> <strong>Free shipping</strong> on orders above PKR 10,000.<br/>
+            <i class="fas fa-undo" style="color:var(--gold);"></i> <strong>5-day</strong> easy return policy.
+          </p>
+        </div>
+
+        <div style="margin-top:16px; text-align:center;">
+          <p style="font-size:0.78rem; color:var(--gray); margin-bottom:10px;">We Accept</p>
+          <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
+            <span class="pay-logo paypal" style="font-size:0.7rem;"><i class="fab fa-paypal"></i> PayPal</span>
+            <span class="pay-logo ep" style="font-size:0.7rem;">EasyPaisa</span>
+            <span class="pay-logo jc" style="font-size:0.7rem;">JazzCash</span>
+            <span class="pay-logo" style="background:#006a4e; color:white; font-size:0.7rem;">Meezan</span>
+            <span class="pay-logo" style="background:var(--dark); color:white; font-size:0.7rem;">COD</span>
+          </div>
+        </div>
+
+        <!-- WhatsApp Help -->
+        <a href="https://wa.me/923330492914?text=Hi%20I%20need%20help%20completing%20my%20order" 
+           target="_blank"
+           style="display:flex; align-items:center; gap:10px; margin-top:20px; padding:12px 16px; background:#25D366; color:white; border-radius:var(--radius); font-size:0.85rem; font-weight:600; text-decoration:none; justify-content:center;">
+          <i class="fab fa-whatsapp" style="font-size:1.2rem;"></i>
+          Need help? Chat on WhatsApp
+        </a>
+      </div>
+    </div>
+
+    <!-- ORDER SUCCESS (hidden by default) -->
+    <div id="order-success-screen" class="hidden" style="padding:80px 0;">
+      <div class="order-success">
+        <div class="order-success-icon"><i class="fas fa-check-circle"></i></div>
+        <h2>Order Placed Successfully! 🎉</h2>
+        <p>
+          Thank you for shopping with <strong>DesignDreams</strong>!<br/>
+          Your order has been received and is being processed. 
+          You'll receive a confirmation on your email and WhatsApp shortly.
+        </p>
+        <div id="order-confirmation-details" style="background:var(--gray-light); border-radius:var(--radius-md); padding:24px; margin-bottom:28px; text-align:left;">
+          <!-- JS-rendered -->
+        </div>
+        <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+          <a href="shop.html" class="btn btn-gold">Continue Shopping</a>
+          <a href="https://wa.me/923330492914" target="_blank" class="btn btn-outline-gold">
+            <i class="fab fa-whatsapp"></i> Contact Us
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHATSAPP FLOAT -->
+  <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%20need%20help%20with%20checkout!" 
+     class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+    <span class="whatsapp-tooltip">Need help?</span>
+  </a>
+
+  <!-- CART DRAWER (for badge count) -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Shopping Cart">
+    <div class="cart-header">
+      <h3><i class="fas fa-shopping-bag"></i> Your Cart (<span id="cart-count">0</span>)</h3>
+      <button class="btn-icon" id="cart-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-body" id="cart-body">
+      <div class="cart-empty" id="cart-empty">
+        <i class="fas fa-shopping-bag"></i>
+        <p>Your cart is empty</p>
+        <a href="shop.html" class="btn btn-gold btn-sm">Start Shopping</a>
+      </div>
+      <ul class="cart-items" id="cart-items"></ul>
+    </div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-total">
+        <span>Subtotal</span>
+        <strong id="cart-total-pkr">PKR 0</strong>
+      </div>
+      <a href="checkout.html" class="btn btn-gold btn-full">Proceed to Checkout</a>
+    </div>
+  </aside>
+
+  <div id="toast-container"></div>
+
+  <!-- PayPal SDK (will load based on config) -->
+  <div id="paypal-sdk-placeholder"></div>
+
+  <script src="js/content.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>

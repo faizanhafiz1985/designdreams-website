@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product – DesignDreams</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <span><i class="fas fa-shipping-fast"></i> Free shipping on orders above PKR 10,000</span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fab fa-whatsapp"></i> <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="site-header" id="site-header">
+    <nav class="navbar container">
+      <a href="index.html" class="brand-logo brand-logo--img">
+        <img src="images/logo.jpg" alt="DesignDreams" class="header-logo-img" />
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="shop.html" class="nav-link active">Shop</a></li>
+        <li class="has-dropdown">
+          <a href="shop.html" class="nav-link">Collections <i class="fas fa-chevron-down fa-xs"></i></a>
+          <ul class="dropdown">
+            <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+            <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+            <li><a href="shop.html?cat=Rings">Rings</a></li>
+            <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+            <li><a href="shop.html?cat=Sets">Sets</a></li>
+          </ul>
+        </li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn-icon" id="search-toggle" aria-label="Search"><i class="fas fa-search"></i></button>
+        <button class="btn-icon cart-btn" id="cart-toggle" aria-label="Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+        <button class="btn-icon hamburger" id="hamburger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      </div>
+    </nav>
+    <div class="search-bar-wrapper" id="search-bar-wrapper">
+      <div class="container">
+        <input type="text" id="search-input" placeholder="Search jewelry, collections…" autocomplete="off" />
+        <button id="search-close"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PRODUCT DETAIL -->
+  <div class="container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb" style="padding-top:24px;" id="product-breadcrumb">
+      <a href="index.html">Home</a>
+      <span class="sep"><i class="fas fa-chevron-right fa-xs"></i></span>
+      <a href="shop.html">Shop</a>
+      <span class="sep"><i class="fas fa-chevron-right fa-xs"></i></span>
+      <span id="bc-product">Loading…</span>
+    </nav>
+
+    <!-- LOADING STATE -->
+    <div id="product-loading" style="text-align:center; padding:80px; color:var(--gray);">
+      <i class="fas fa-spinner fa-spin fa-2x" style="margin-bottom:16px; display:block; color:var(--gold);"></i>
+      Loading product…
+    </div>
+
+    <!-- PRODUCT CONTENT (hidden until loaded) -->
+    <div class="product-detail-layout" id="product-detail" style="display:none;">
+      <!-- Left: Gallery -->
+      <div>
+        <div class="product-gallery-main" id="gallery-main">
+          <img id="main-image" src="" alt="Product" />
+        </div>
+        <div class="product-thumbnails" id="thumbnails"></div>
+      </div>
+
+      <!-- Right: Info -->
+      <div class="product-detail-info" id="product-info">
+        <p class="detail-category" id="det-category"></p>
+        <h1 class="detail-name" id="det-name"></h1>
+        <div class="detail-rating">
+          <span class="stars" id="det-stars"></span>
+          <span id="det-rating-text"></span>
+        </div>
+        <div class="detail-price">
+          <div class="detail-price-pkr" id="det-price-pkr"></div>
+        </div>
+        <hr class="detail-divider" />
+        <p class="detail-desc" id="det-desc"></p>
+        <div class="detail-meta">
+          <p><strong>Material:</strong> <span id="det-material"></span></p>
+          <p><strong>Availability:</strong> <span id="det-stock" style="color:green;"><i class="fas fa-check-circle"></i> In Stock</span></p>
+        </div>
+        <div class="detail-features">
+          <span class="detail-feature-badge"><i class="fas fa-shield-alt"></i> Hypoallergenic</span>
+          <span class="detail-feature-badge"><i class="fas fa-tint-slash"></i> Tarnish-Proof</span>
+          <span class="detail-feature-badge"><i class="fas fa-water"></i> Water-Resistant</span>
+          <span class="detail-feature-badge"><i class="fas fa-certificate"></i> 925 Steel</span>
+        </div>
+        <hr class="detail-divider" />
+
+        <!-- Quantity -->
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+          <span style="font-weight:600; font-size:0.9rem;">Quantity:</span>
+          <button class="qty-btn" id="qty-minus"><i class="fas fa-minus fa-xs"></i></button>
+          <span class="qty-display" id="qty-val">1</span>
+          <button class="qty-btn" id="qty-plus"><i class="fas fa-plus fa-xs"></i></button>
+        </div>
+
+        <!-- Actions -->
+        <div class="detail-actions">
+          <button class="btn-add-cart" id="det-add-cart" style="flex:2; padding:16px;">
+            <i class="fas fa-shopping-bag"></i> Add to Cart
+          </button>
+          <a href="#" class="btn-whatsapp-order" id="det-whatsapp-order">
+            <i class="fab fa-whatsapp"></i> Order via WhatsApp
+          </a>
+        </div>
+        <a href="checkout.html" class="btn btn-gold btn-full" id="det-buy-now" style="margin-top:0;">
+          <i class="fas fa-bolt"></i> Buy Now
+        </a>
+
+        <!-- Share -->
+        <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+          <span style="font-size:0.82rem; color:var(--gray); font-weight:600; margin-right:12px;">SHARE:</span>
+          <a href="#" id="share-wa" style="color:#25D366; font-size:1.2rem; margin-right:12px;" title="Share on WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+          </a>
+          <a href="#" id="share-fb" style="color:#1877F2; font-size:1.2rem; margin-right:12px;" title="Share on Facebook">
+            <i class="fab fa-facebook"></i>
+          </a>
+          <a href="#" id="copy-link" style="color:var(--gray); font-size:1.1rem;" title="Copy Link">
+            <i class="fas fa-link"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- RELATED PRODUCTS -->
+    <section class="section" id="related-section" style="display:none; padding-top:48px;">
+      <div class="section-header" style="margin-bottom:36px;">
+        <p class="section-eyebrow">You May Also Like</p>
+        <h2 class="section-title">Related Products</h2>
+      </div>
+      <div class="products-grid" id="related-grid"></div>
+    </section>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="brand-logo footer-logo brand-logo--img">
+          <img src="images/logo.jpg" alt="DesignDreams" class="footer-logo-img" />
+        </div>
+        <p>Premium stainless steel and artificial jewelry crafted for the modern woman.</p>
+        <div class="social-links mt-16">
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+          <a href="https://wa.me/923330492914" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="shop.html">All Jewelry</a></li>
+          <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+          <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+          <li><a href="shop.html?cat=Rings">Rings</a></li>
+          <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <ul>
+          <li><a href="index.html#contact">Contact</a></li>
+          <li><a href="#">Return Policy</a></li>
+          <li><a href="#">Shipping</a></li>
+          <li><a href="#">Size Guide</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul class="contact-list">
+          <li><i class="fas fa-envelope"></i> <a href="mailto:info@designdreams.pk">info@designdreams.pk</a></li>
+          <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 DesignDreams. All rights reserved. | Crafted with <i class="fas fa-heart"></i> in Pakistan</p>
+    </div>
+  </footer>
+
+  <!-- CART DRAWER -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Shopping Cart">
+    <div class="cart-header">
+      <h3><i class="fas fa-shopping-bag"></i> Your Cart (<span id="cart-count">0</span>)</h3>
+      <button class="btn-icon" id="cart-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-body" id="cart-body">
+      <div class="cart-empty" id="cart-empty">
+        <i class="fas fa-shopping-bag"></i>
+        <p>Your cart is empty</p>
+        <a href="shop.html" class="btn btn-gold btn-sm">Start Shopping</a>
+      </div>
+      <ul class="cart-items" id="cart-items"></ul>
+    </div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-total">
+        <span>Subtotal</span>
+        <strong id="cart-total-pkr">PKR 0</strong>
+      </div>
+      <a href="checkout.html" class="btn btn-gold btn-full">Proceed to Checkout</a>
+    </div>
+  </aside>
+
+  <!-- WHATSAPP FLOAT -->
+  <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%27m%20interested%20in%20a%20product!" 
+     class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+    <span class="whatsapp-tooltip">Chat with us!</span>
+  </a>
+
+  <div id="toast-container"></div>
+
+  <script src="js/content.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/product.js"></script>
+</body>
+</html>

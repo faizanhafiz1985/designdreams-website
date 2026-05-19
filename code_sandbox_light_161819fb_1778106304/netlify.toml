@@ -1,0 +1,45 @@
+# DesignDreams – Netlify Configuration
+# =====================================
+# Place this file in the root of your deployment zip.
+
+[build]
+  publish = "."
+
+# ── Redirect all API-style paths that the old Xano backend used ──────────
+# (Prevents accidental 404s if any old URL leaks through)
+[[redirects]]
+  from   = "/tables/*"
+  to     = "/404.html"
+  status = 404
+
+# ── Security Headers ──────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+
+# ── Cache static assets aggressively ─────────────────────────────────────
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/data/products.json"
+  [headers.values]
+    # Short TTL + must-revalidate so visitors pick up the latest deploy quickly.
+    # The ETag/Last-Modified returned here is used by the site to detect updates.
+    Cache-Control = "public, max-age=60, must-revalidate"

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DesignDreams – Luxury Stainless Steel Jewelry</title>
+  <meta name="description" content="DesignDreams offers premium artificial and stainless steel jewelry. Shop necklaces, bracelets, rings, earrings, and sets with worldwide shipping." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ===== TOP BAR ===== -->
+  <div class="top-bar">
+    <span><i class="fas fa-shipping-fast"></i> Free shipping on orders above PKR 10,000</span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fab fa-whatsapp"></i> WhatsApp: <a href="https://wa.me/923330492914?text=Hi%2C%20I%27m%20interested%20in%20DesignDreams%20jewelry!" target="_blank">+92 333 0492914</a></span>
+    <span class="top-bar-sep">|</span>
+    <span><i class="fas fa-envelope"></i> designdreamsbysyeda@gmail.com</span>
+  </div>
+
+  <!-- ===== HEADER / NAV ===== -->
+  <header class="site-header scrolled" id="site-header">
+    <nav class="navbar container">
+      <a href="index.html" class="brand-logo brand-logo--img">
+        <img src="images/logo.jpg" alt="DesignDreams" class="header-logo-img" />
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html" class="nav-link active">Home</a></li>
+        <li><a href="shop.html" class="nav-link">Shop</a></li>
+        <li class="has-dropdown">
+          <a href="shop.html" class="nav-link">Collections <i class="fas fa-chevron-down fa-xs"></i></a>
+          <ul class="dropdown">
+            <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+            <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+            <li><a href="shop.html?cat=Rings">Rings</a></li>
+            <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+            <li><a href="shop.html?cat=Sets">Sets</a></li>
+          </ul>
+        </li>
+        <li><a href="index.html#about" class="nav-link">About</a></li>
+        <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="btn-icon" id="search-toggle" aria-label="Search"><i class="fas fa-search"></i></button>
+        <button class="btn-icon cart-btn" id="cart-toggle" aria-label="Cart">
+          <i class="fas fa-shopping-bag"></i>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </button>
+        <button class="btn-icon hamburger" id="hamburger" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      </div>
+    </nav>
+
+    <!-- Search Bar -->
+    <div class="search-bar-wrapper" id="search-bar-wrapper">
+      <div class="container">
+        <input type="text" id="search-input" placeholder="Search jewelry, collections…" autocomplete="off" />
+        <button id="search-close"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="hero">
+    <div class="hero-slides">
+      <div class="hero-slide active" style="background-image:url('https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=1600&q=90')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=1600&q=90')"></div>
+      <div class="hero-slide" style="background-image:url('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1600&q=90')"></div>
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content container">
+      <p class="hero-eyebrow" id="hero-eyebrow-text">Premium Stainless Steel Collection</p>
+      <h1 class="hero-title" id="hero-title-text">Wear Your<br /><span class="gold-text">Dream</span></h1>
+      <p class="hero-subtitle" id="hero-subtitle-text">Handcrafted artificial jewelry that lasts a lifetime.<br />Tarnish-proof · Hypoallergenic · Timeless.</p>
+      <div class="hero-cta-group">
+        <a href="shop.html" class="btn btn-gold">Shop Now</a>
+        <a href="index.html#about" class="btn btn-ghost">Our Story</a>
+      </div>
+    </div>
+    <div class="hero-dots" id="hero-dots">
+      <span class="dot active" data-slide="0"></span>
+      <span class="dot" data-slide="1"></span>
+      <span class="dot" data-slide="2"></span>
+    </div>
+  </section>
+
+  <!-- ===== TRUST STRIP ===== -->
+  <section class="trust-strip">
+    <div class="container trust-grid">
+      <div class="trust-item"><i class="fas fa-medal"></i><div><strong>Premium Quality</strong><span>Branded 925 Stainless Steel</span></div></div>
+      <div class="trust-item"><i class="fas fa-shield-alt"></i><div><strong>Hypoallergenic</strong><span>Safe for all skin types</span></div></div>
+      <div class="trust-item"><i class="fas fa-undo"></i><div><strong>Easy Returns</strong><span>5-day return policy</span></div></div>
+      <div class="trust-item"><i class="fas fa-lock"></i><div><strong>Secure Payment</strong><span>PayPal · EasyPaisa</span></div></div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURED CATEGORIES ===== -->
+  <section class="section categories-section" id="categories">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Browse By</p>
+        <h2 class="section-title">Our Collections</h2>
+      </div>
+      <div class="categories-grid">
+        <a href="shop.html?cat=Necklaces" class="category-card">
+          <div class="category-img" style="background-image:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80')"></div>
+          <div class="category-info"><h3>Necklaces</h3><span>View All</span></div>
+        </a>
+        <a href="shop.html?cat=Bracelets" class="category-card">
+          <div class="category-img" style="background-image:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=500&q=80')"></div>
+          <div class="category-info"><h3>Bracelets</h3><span>View All</span></div>
+        </a>
+        <a href="shop.html?cat=Rings" class="category-card">
+          <div class="category-img" style="background-image:url('https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=500&q=80')"></div>
+          <div class="category-info"><h3>Rings</h3><span>View All</span></div>
+        </a>
+        <a href="shop.html?cat=Earrings" class="category-card">
+          <div class="category-img" style="background-image:url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=500&q=80')"></div>
+          <div class="category-info"><h3>Earrings</h3><span>View All</span></div>
+        </a>
+        <a href="shop.html?cat=Sets" class="category-card category-card--wide">
+          <div class="category-img" style="background-image:url('https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=800&q=80')"></div>
+          <div class="category-info"><h3>Complete Sets</h3><span>View All</span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FEATURED PRODUCTS ===== -->
+  <section class="section featured-section" id="featured">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Handpicked For You</p>
+        <h2 class="section-title">Bestsellers</h2>
+      </div>
+      <div class="products-grid" id="featured-products-grid">
+        <!-- JS-rendered -->
+      </div>
+      <div class="text-center mt-32">
+        <a href="shop.html" class="btn btn-outline-gold">View All Products</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== LIFESTYLE BANNER ===== -->
+  <section class="lifestyle-banner" id="about">
+    <div class="lifestyle-img" style="background-image:url('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=1200&q=85')"></div>
+    <div class="lifestyle-overlay"></div>
+    <div class="lifestyle-content container">
+      <p class="section-eyebrow light">Our Story</p>
+      <h2>Jewelry That Tells<br /><em>Your Story</em></h2>
+      <p>DesignDreams was born from a passion for elegant, accessible jewelry. We believe every woman deserves to wear pieces that are beautiful, durable, and kind to the skin. Our Branded 925 Stainless Steel collection is crafted to last — resistant to tarnish, sweat, and time.</p>
+      <a href="shop.html" class="btn btn-gold mt-24">Explore Collection</a>
+    </div>
+  </section>
+
+  <!-- ===== TESTIMONIALS ===== -->
+  <section class="section testimonials-section">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-eyebrow">Happy Customers</p>
+        <h2 class="section-title">What They Say</h2>
+      </div>
+      <div class="testimonials-grid" id="testimonials-grid">
+        <article class="testimonial-card">
+          <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+          <p>"The Golden Luxury Set is absolutely stunning! It hasn't tarnished even after months. Highly recommend DesignDreams!"</p>
+          <footer><strong>Ayesha K.</strong> – Lahore</footer>
+        </article>
+        <article class="testimonial-card">
+          <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+          <p>"Ordered via EasyPaisa and my bracelet arrived in 2 days! The quality is premium and the packaging was beautiful."</p>
+          <footer><strong>Sana R.</strong> – Karachi</footer>
+        </article>
+        <article class="testimonial-card">
+          <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
+          <p>"Love the pearl earrings! They're hypoallergenic as promised. Perfect for my sensitive ears. Will order again!"</p>
+          <footer><strong>Fatima M.</strong> – Islamabad</footer>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== INSTAGRAM / GALLERY STRIP ===== -->
+  <section class="gallery-strip" id="gallery-strip">
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+    <a class="gallery-item" href="shop.html" style="background-image:url('https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80')"><span class="gallery-overlay"><i class="fab fa-instagram"></i></span></a>
+  </section>
+
+  <!-- ===== CONTACT / INQUIRY ===== -->
+  <section class="section contact-section" id="contact">
+    <div class="container contact-grid">
+      <div class="contact-info">
+        <p class="section-eyebrow">Get In Touch</p>
+        <h2 class="section-title">Send an inquiry.</h2>
+        <p class="contact-desc">Have questions about a product, bulk orders, or custom pieces? Reach out and we'll respond within 24 hours.</p>
+        <ul class="contact-details">
+          <li><i class="fas fa-envelope"></i><span style="line-height: 107%;">designdreamsbysyeda@gmail.com</span></li>
+          <li><i class="fab fa-whatsapp"></i><a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></li>
+          <li><i class="fas fa-map-marker-alt"></i><span>North Nazimabad Block L, Karachi, Pakistan</span></li>
+          <li><i class="fas fa-clock"></i><span>Mon–Sat: 9 AM – 7 PM</span></li>
+        </ul>
+        <div class="social-links">
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+          <a href="https://wa.me/923330492914" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+          <a href="https://www.tiktok.com" target="_blank" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+        </div>
+      </div>
+      <div class="contact-form-wrapper">
+        <form class="contact-form" id="inquiry-form" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inq-name">Full Name *</label>
+              <input type="text" id="inq-name" name="name" placeholder="Sara Ahmed" required />
+            </div>
+            <div class="form-group">
+              <label for="inq-email">Email Address *</label>
+              <input type="email" id="inq-email" name="email" placeholder="sara@example.com" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="inq-phone">Phone / WhatsApp</label>
+              <input type="tel" id="inq-phone" name="phone" placeholder="+92 300 0000000" />
+            </div>
+            <div class="form-group">
+              <label for="inq-subject">Subject *</label>
+              <select id="inq-subject" name="subject" required>
+                <option value="">Select a topic…</option>
+                <option>Product Inquiry</option>
+                <option>Bulk / Wholesale Order</option>
+                <option>Custom Design</option>
+                <option>Order Status</option>
+                <option>Return / Exchange</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="inq-message">Message *</label>
+            <textarea id="inq-message" name="message" rows="5" placeholder="Tell us what you need…" required></textarea>
+          </div>
+          <div id="inquiry-success" class="alert alert-success hidden">✅ Thank you! Your inquiry has been sent. We'll contact you soon.</div>
+          <div id="inquiry-error" class="alert alert-error hidden">❌ Something went wrong. Please try again.</div>
+          <button type="submit" class="btn btn-gold btn-full" id="inquiry-submit">
+            <span>Send Inquiry</span><i class="fas fa-paper-plane"></i>
+          </button>
+          <p class="form-note">Or reach us instantly on <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%20have%20an%20inquiry" target="_blank"><i class="fab fa-whatsapp"></i> WhatsApp</a></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="brand-logo footer-logo brand-logo--img">
+          <img src="images/logo.jpg" alt="DesignDreams" class="footer-logo-img" />
+        </div>
+        <p>Premium stainless steel and artificial jewelry crafted for the modern woman. Tarnish-proof, hypoallergenic, and timeless.</p>
+        <div class="social-links mt-16">
+          <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+          <a href="https://wa.me/923330492914" target="_blank" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="shop.html">All Jewelry</a></li>
+          <li><a href="shop.html?cat=Necklaces">Necklaces</a></li>
+          <li><a href="shop.html?cat=Bracelets">Bracelets</a></li>
+          <li><a href="shop.html?cat=Rings">Rings</a></li>
+          <li><a href="shop.html?cat=Earrings">Earrings</a></li>
+          <li><a href="shop.html?cat=Sets">Sets</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <ul>
+          <li><a href="index.html#contact">Contact Us</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="#">Shipping Policy</a></li>
+          <li><a href="#">Return Policy</a></li>
+          <li><a href="#">Size Guide</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul class="contact-list">
+          <li><i class="fas fa-envelope"></i> <a href="mailto:info@designdreams.pk">info@designdreams.pk</a></li>
+          <li><i class="fab fa-whatsapp"></i> <a href="https://wa.me/923330492914" target="_blank">+92 333 0492914</a></li>
+          <li><i class="fas fa-map-marker-alt"></i> North Nazimabad Block L, Karachi, Pakistan</li>
+        </ul>
+        <div class="payment-logos">
+          <span class="pay-logo paypal"><i class="fab fa-paypal"></i> PayPal</span>
+          <span class="pay-logo ep">EasyPaisa</span>
+          <span class="pay-logo jc">JazzCash</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 DesignDreams. All rights reserved. | Crafted with <i class="fas fa-heart"></i> in Pakistan
+        &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.3); font-size:0.75rem;">Admin</a>
+      </p>
+    </div>
+  </footer>
+
+  <!-- ===== CART DRAWER ===== -->
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-drawer" id="cart-drawer" aria-label="Shopping Cart">
+    <div class="cart-header">
+      <h3><i class="fas fa-shopping-bag"></i> Your Cart (<span id="cart-count">0</span>)</h3>
+      <button class="btn-icon" id="cart-close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-body" id="cart-body">
+      <div class="cart-empty" id="cart-empty">
+        <i class="fas fa-shopping-bag"></i>
+        <p>Your cart is empty</p>
+        <a href="shop.html" class="btn btn-gold btn-sm">Start Shopping</a>
+      </div>
+      <ul class="cart-items" id="cart-items"></ul>
+    </div>
+    <div class="cart-footer" id="cart-footer" style="display:none">
+      <div class="cart-total">
+        <span>Subtotal</span>
+        <strong id="cart-total-pkr">PKR 0</strong>
+      </div>
+      <a href="checkout.html" class="btn btn-gold btn-full">Proceed to Checkout</a>
+      <a href="shop.html" class="btn btn-ghost btn-full mt-8">Continue Shopping</a>
+    </div>
+  </aside>
+
+  <!-- ===== WHATSAPP FLOATING BTN ===== -->
+  <a href="https://wa.me/923330492914?text=Hi%20DesignDreams%2C%20I%27m%20interested%20in%20your%20jewelry!" 
+     class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+    <span class="whatsapp-tooltip">Chat with us!</span>
+  </a>
+
+  <script src="js/content.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
