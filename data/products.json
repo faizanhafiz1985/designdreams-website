@@ -96,5 +96,19 @@
     "badge": "New",
     "rating": 4.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779219891447",
+    "name": "Stainless Steel Pendant",
+    "category": "Neckline",
+    "price": 1200,
+    "price_usd": 15.75,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779219891447.png",
+    "short_desc": "gold plated original lifetime daily wear",
+    "description": "",
+    "material": "925 Stainless Steel, Gold Plated",
+    "badge": "New",
+    "rating": 4.5,
+    "in_stock": true
   }
 ]
