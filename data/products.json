@@ -138,5 +138,19 @@
     "badge": "New",
     "rating": 5.5,
     "in_stock": true
+  },
+  {
+    "id": "p1779222228729",
+    "name": "Stainless Steel Green Chain Set",
+    "category": "Sets",
+    "price": 2500,
+    "price_usd": 15.75,
+    "image_url": "https://raw.githubusercontent.com/faizanhafiz1985/designdreams-website/main/images/products/p1779222228729.jpeg",
+    "short_desc": "gold plated original lifetime",
+    "description": "",
+    "material": "925 Stainless Steel, Gold Plated",
+    "badge": "New",
+    "rating": 4.5,
+    "in_stock": true
   }
 ]
